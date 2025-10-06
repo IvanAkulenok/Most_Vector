@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Идеи | МостВектор - Межвузовские проектные команды</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #8BDAC3 0%, #065B5E 50%, #C198FF 100%);
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #e5e7eb #f3f4f6;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: #e5e7eb;
+            border-radius: 6px;
+        }
+        .idea-board {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)),
+                url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.2' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+        .idea-sticky-note {
+            background: linear-gradient(135deg, #f6e58d 0%, #ffbe76 100%);
+            transform: rotate(-1deg);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+        }
+        .idea-sticky-note:hover {
+            transform: rotate(0deg) scale(1.03);
+        }
+        .idea-sticky-note.purple {
+            background: linear-gradient(135deg, #e056fd 0%, #686de0 100%);
+        }
+        .idea-sticky-note.green {
+            background: linear-gradient(135deg, #badc58 0%, #6ab04c 100%);
+        }
+        .idea-sticky-note.blue {
+            background: linear-gradient(135deg, #7ed6df 0%, #22a6b3 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <img src="/Логотип МостВектор.png" class="w-10 h-10">
+                    <span class="text-xl font-bold text-[#065B5E] hidden md:block">МостВектор</span>
+                </a>
+                
+                <nav class="hidden lg:flex space-x-1">
+                    <div class="relative group">
+                        <button class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium flex items-center space-x-1">
+                            <span>Проекты</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div class="absolute left-0 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block top-full">
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Все проекты</a>
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Создать проект</a>
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Популярные проекты</a>
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Формирование команд</a>
+                        </div>
+                    </div>
+                    <a href="forum.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Форум</a>
+                    <a href="ideas.html" class="px-4 py-2 text-[#065B5E] hover:text-gray-900 font-medium border-b-2 border-[#065B5E]">Идеи</a>
+                    <a href="rating.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Рейтинг</a>
+                    <a href="chat.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Чаты</a>
+                </nav>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="relative hidden md:block">
+                    <input type="text" placeholder="Поиск..." class="pl-10 pr-4 py-2 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+                </div>
+                
+                <div class="relative">
+                    <button class="p-2 text-[#444] hover:text-gray-900 relative">
+                        <i class="far fa-bell text-xl"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full top-0.5"></span>
+                    </button>
+                </div>
+                
+                <div id="authContainer">
+                    <a id="authButton" href="login.html" class="px-4 py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">Войти</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu button -->
+        <div class="lg:hidden flex justify-between items-center px-4 py-2">
+            <button id="mobileMenuButton" class="text-[#444] hover:text-gray-900">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <div class="relative w-full max-w-xs mx-2">
+                <input type="text" placeholder="Поиск..." class="pl-8 pr-4 py-1 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent w-full">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobileMenu" class="hidden lg:hidden bg-white border-t border-gray-200 px-4 py-2">
+            <div class="flex flex-col space-y-1">
+                <div class="group">
+                    <button class="w-full flex justify-between items-center px-2 py-2 text-[#444] hover:text-gray-900">
+                        <span>Проекты</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    <div class="hidden group-focus-within:block pl-4">
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Все проекты</a>
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Создать проект</a>
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Популярные проекты</a>
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Формирование команд</a>
+                    </div>
+                </div>
+                <a href="forum.html" class="px-2 py-2 text-[#444] hover:text-gray-900">Форум</a>
+                <a href="ideas.html" class="px-2 py-2 text-[#065B5E] hover:text-gray-900 border-l-4 border-[#065B5E] pl-2">Идеи</a>
+                <a href="rating.html" class="px-2 py-2 text-[#444] hover:text-gray-900">Рейтинг</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Hero Section -->
+        <section class="gradient-bg text-white rounded-xl p-8 mb-8">
+            <div class="max-w-3xl">
+                <h1 class="text-3xl md:text-4xl font-bold mb-4">Проектные идеи</h1>
+                <p class="text-lg md:text-xl mb-6">Публикуйте свои идеи, находите единомышленников и развивайте проекты вместе с участниками из разных университетов.</p>
+                <button id="openIdeaModal" class="px-6 py-3 bg-white text-[#065B5E] font-medium rounded-md hover:bg-[#8BDAC3]/20 transition">
+                    <i class="fas fa-plus mr-2"></i> Добавить идею
+                </button>
+            </div>
+        </section>
+
+        <!-- Filters and Search -->
+        <section class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="w-full md:w-auto">
+                    <div class="relative">
+                        <input type="text" placeholder="Поиск идей..." class="pl-10 pr-4 py-2 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent w-full">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                    <button class="px-3 py-1 bg-[#065B5E] text-white text-sm rounded-full">Все</button>
+                    <button class="px-3 py-1 bg-white border border-[#8BDAC3] text-[#065B5E] text-sm rounded-full hover:bg-[#8BDAC3]/20">IT</button>
+                    <button class="px-3 py-1 bg-white border border-[#8BDAC3] text-[#065B5E] text-sm rounded-full hover:bg-[#8BDAC3]/20">Наука</button>
+                    <button class="px-3 py-1 bg-white border border-[#8BDAC3] text-[#065B5E] text-sm rounded-full hover:bg-[#8BDAC3]/20">Образование</button>
+                    <button class="px-3 py-1 bg-white border border-[#8BDAC3] text-[#065B5E] text-sm rounded-full hover:bg-[#8BDAC3]/20">Социальные</button>
+                    <button class="px-3 py-1 bg-white border border-[#8BDAC3] text-[#065B5E] text-sm rounded-full hover:bg-[#8BDAC3]/20">Экология</button>
+                </div>
+                <div class="w-full md:w-auto">
+                    <select class="px-4 py-2 border border-[#8BDAC3] rounded-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent text-[#065B5E]">
+                        <option>Сортировать по</option>
+                        <option>Самые новые</option>
+                        <option>Самые популярные</option>
+                        <option>Самые обсуждаемые</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ideas Grid -->
+        <section class="mb-12">
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Idea Card 1 -->
+                <div class="idea-sticky-note rounded-lg p-6 transition duration-300">
+                    <div class="flex items-start mb-4">
+                        <div class="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center text-white mr-3">
+                            <i class="fas fa-user text-[#065B5E]"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-[#065B5E] mb-1">Платформа для обмена учебными материалами</h3>
+                            <p class="text-sm text-[#065B5E]/80">Иван Петров • МГУ</p>
+                        </div>
+                    </div>
+                    <p class="text-[#065B5E] text-sm mb-4">Создание системы, где студенты разных вузов могут обмениваться конспектами, методичками и другими учебными материалами с системой рейтинга качества.</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-2 py-1 bg-white/30 text-[#065B5E] text-xs rounded-full">Образование</span>
+                        <span class="px-2 py-1 bg-white/30 text-[#065B5E] text-xs rounded-full">IT</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center text-[#065B5E]">
+                            <i class="far fa-thumbs-up mr-1"></i>
+                            <span class="mr-3">24</span>
+                            <i class="far fa-comment mr-1"></i>
+                            <span>8</span>
+                        </div>
+                        <a href="idea-detail.html" class="text-[#065B5E] hover:text-[#C198FF] font-medium text-sm">
+                            Подробнее <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Idea Card 2 -->
+                <div class="idea-sticky-note purple rounded-lg p-6 transition duration-300">
+                    <div class="flex items-start mb-4">
+                        <div class="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center text-white mr-3">
+                            <i class="fas fa-user text-purple-800"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-white mb-1">Мобильное приложение для волонтеров</h3>
+                            <p class="text-sm text-white/80">Анна Смирнова • СПбГУ</p>
+                        </div>
+                    </div>
+                    <p class="text-white text-sm mb-4">Разработка платформы для координации волонтерской деятельности студентов с возможностью учета часов и выдачи сертификатов.</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-2 py-1 bg-white/30 text-white text-xs rounded-full">Социальный проект</span>
+                        <span class="px-2 py-1 bg-white/30 text-white text-xs rounded-full">Мобильная разработка</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center text-white">
+                            <i class="far fa-thumbs-up mr-1"></i>
+                            <span class="mr-3">18</span>
+                            <i class="far fa-comment mr-1"></i>
+                            <span>5</span>
+                        </div>
+                        <a href="idea-detail.html" class="text-white hover:text-purple-200 font-medium text-sm">
+                            Подробнее <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Idea Card 3 -->
+                <div class="idea-sticky-note green rounded-lg p-6 transition duration-300">
+                    <div class="flex items-start mb-4">
+                        <div class="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center text-white mr-3">
+                            <i class="fas fa-user text-green-800"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-white mb-1">Эко-мониторинг городских парков</h3>
+                            <p class="text-sm text-white/80">Дмитрий Иванов • НГУ</p>
+                        </div>
+                    </div>
+                    <p class="text-white text-sm mb-4">Создание сети датчиков для мониторинга состояния воздуха, почвы и воды в городских парках с визуализацией данных на карте.</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-2 py-1 bg-white/30 text-white text-xs rounded-full">Экология</span>
+                        <span class="px-2 py-1 bg-white/30 text-white text-xs rounded-full">IoT</span>
+                        <span class="px-2 py-1 bg-white/30 text-white text-xs rounded-full">ГИС</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center text-white">
+                            <i class="far fa-thumbs-up mr-1"></i>
+                            <span class="mr-3">15</span>
+                            <i class="far fa-comment mr-1"></i>
+                            <span>3</span>
+                        </div>
+                        <a href="idea-detail.html" class="text-white hover:text-green-200 font-medium text-sm">
+                            Подробнее <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Idea Card 4 -->
+                <div class="idea-sticky-note blue rounded-lg p-6 transition duration-300">
+                    <div class="flex items-start mb-4">
+                        <div class="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center text-white mr-3">
+                            <i class="fas fa-user text-blue-800"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-white mb-1">VR-лаборатория для химических опытов</h3>
+                            <p class="text-sm text-white/80">Елена Кузнецова • КФУ</p>
+                        </div>
+                    </div>
+                    <p class="text-white text-sm mb-4">Разработка виртуальной лаборатории для безопасного проведения химических экспериментов студентами.</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-2 py-1 bg-white/30 text-white text-xs rounded-full">VR/AR</span>
+                        <span class="px-2 py-1 bg-white/30 text-white text-xs rounded-full">Образование</span>
+                        <span class="px-2 py-1 bg-white/30 text-white text-xs rounded-full">Химия</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center text-white">
+                            <i class="far fa-thumbs-up mr-1"></i>
+                            <span class="mr-3">12</span>
+                            <i class="far fa-comment mr-1"></i>
+                            <span>4</span>
+                        </div>
+                        <a href="idea-detail.html" class="text-white hover:text-blue-200 font-medium text-sm">
+                            Подробнее <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Idea Card 5 -->
+                <div class="idea-sticky-note rounded-lg p-6 transition duration-300">
+                    <div class="flex items-start mb-4">
+                        <div class="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center text-white mr-3">
+                            <i class="fas fa-user text-[#065B5E]"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-[#065B5E] mb-1">Образовательный чат-бот по программированию</h3>
+                            <p class="text-sm text-[#065B5E]/80">Алексей Семенов • МФТИ</p>
+                        </div>
+                    </div>
+                    <p class="text-[#065B5E] text-sm mb-4">Создание AI-ассистента для помощи студентам в изучении программирования с персонализированными учебными траекториями.</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-2 py-1 bg-white/30 text-[#065B5E] text-xs rounded-full">AI</span>
+                        <span class="px-2 py-1 bg-white/30 text-[#065B5E] text-xs rounded-full">Образование</span>
+                        <span class="px-2 py-1 bg-white/30 text-[#065B5E] text-xs rounded-full">Программирование</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center text-[#065B5E]">
+                            <i class="far fa-thumbs-up mr-1"></i>
+                            <span class="mr-3">20</span>
+                            <i class="far fa-comment mr-1"></i>
+                            <span>7</span>
+                        </div>
+                        <a href="idea-detail.html" class="text-[#065B5E] hover:text-[#C198FF] font-medium text-sm">
+                            Подробнее <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Idea Card 6 -->
+                <div class="idea-sticky-note purple rounded-lg p-6 transition duration-300">
+                    <div class="flex items-start mb-4">
+                        <div class="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center text-white mr-3">
+                            <i class="fas fa-user text-purple-800"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-white mb-1">Цифровой архив народных сказок</h3>
+                            <p class="text-sm text-white/80">Мария Волкова • РГГУ</p>
+                        </div>
+                    </div>
+                    <p class="text-white text-sm mb-4">Создание открытой базы данных народных сказок с возможностью поиска по регионам, темам и персонажам.</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="px-2 py-1 bg-white/30 text-white text-xs rounded-full">Культура</span>
+                        <span class="px-2 py-1 bg-white/30 text-white text-xs rounded-full">Базы данных</span>
+                        <span class="px-2 py-1 bg-white/30 text-white text-xs rounded-full">Лингвистика</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <div class="flex items-center text-white">
+                            <i class="far fa-thumbs-up mr-1"></i>
+                            <span class="mr-3">9</span>
+                            <i class="far fa-comment mr-1"></i>
+                            <span>2</span>
+                        </div>
+                        <a href="idea-detail.html" class="text-white hover:text-purple-200 font-medium text-sm">
+                            Подробнее <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex justify-center mt-8">
+                <nav class="inline-flex rounded-md shadow">
+                    <a href="#" class="px-3 py-2 rounded-l-md border border-[#8BDAC3] bg-white text-[#065B5E] hover:bg-[#8BDAC3]/20">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                    <a href="#" class="px-3 py-2 border-t border-b border-[#8BDAC3] bg-white text-[#065B5E] hover:bg-[#8BDAC3]/20">1</a>
+                    <a href="#" class="px-3 py-2 border-t border-b border-[#8BDAC3] bg-[#065B5E] text-white">2</a>
+                    <a href="#" class="px-3 py-2 border-t border-b border-[#8BDAC3] bg-white text-[#065B5E] hover:bg-[#8BDAC3]/20">3</a>
+                    <a href="#" class="px-3 py-2 rounded-r-md border border-[#8BDAC3] bg-white text-[#065B5E] hover:bg-[#8BDAC3]/20">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </nav>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Add Idea Modal -->
+    <div id="ideaModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b px-6 py-4 sticky top-0 bg-white z-10">
+                <h3 class="text-lg font-semibold text-[#065B5E]">Добавить новую идею</h3>
+                <button id="closeIdeaModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="px-6 py-4">
+                <form id="ideaForm">
+                    <div class="mb-4">
+                        <label for="ideaTitle" class="block text-gray-700 mb-2">Название идеи*</label>
+                        <input type="text" id="ideaTitle" class="w-full px-3 py-2 border border-[#8BDAC3] rounded-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3]" required>
+                        <div id="titleError" class="error-message hidden">Пожалуйста, введите название идеи</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="ideaDescription" class="block text-gray-700 mb-2">Описание идеи*</label>
+                        <textarea id="ideaDescription" rows="5" class="w-full px-3 py-2 border border-[#8BDAC3] rounded-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3]" required></textarea>
+                        <div id="descriptionError" class="error-message hidden">Пожалуйста, опишите вашу идею</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="ideaTags" class="block text-gray-700 mb-2">Теги (максимум 5)</label>
+                        <div class="flex flex-wrap gap-2 mb-2" id="selectedTags"></div>
+                        <div class="relative">
+                            <input type="text" id="ideaTags" placeholder="Введите тег и нажмите Enter" class="w-full px-3 py-2 border border-[#8BDAC3] rounded-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3]">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <i class="fas fa-tag text-gray-400"></i>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">Примеры: IT, Образование, Наука, Социальный проект, Экология</div>
+                        <div id="tagsError" class="error-message hidden">Можно добавить не более 5 тегов</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">Категория*</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="category" value="IT" class="h-4 w-4 text-[#065B5E] focus:ring-[#8BDAC3] border-[#8BDAC3]" checked>
+                                <span class="ml-2 text-gray-700">IT</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="category" value="Наука" class="h-4 w-4 text-[#065B5E] focus:ring-[#8BDAC3] border-[#8BDAC3]">
+                                <span class="ml-2 text-gray-700">Наука</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="category" value="Образование" class="h-4 w-4 text-[#065B5E] focus:ring-[#8BDAC3] border-[#8BDAC3]">
+                                <span class="ml-2 text-gray-700">Образование</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="category" value="Социальный" class="h-4 w-4 text-[#065B5E] focus:ring-[#8BDAC3] border-[#8BDAC3]">
+                                <span class="ml-2 text-gray-700">Социальный</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="category" value="Экология" class="h-4 w-4 text-[#065B5E] focus:ring-[#8BDAC3] border-[#8BDAC3]">
+                                <span class="ml-2 text-gray-700">Экология</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="category" value="Культура" class="h-4 w-4 text-[#065B5E] focus:ring-[#8BDAC3] border-[#8BDAC3]">
+                                <span class="ml-2 text-gray-700">Культура</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="category" value="Бизнес" class="h-4 w-4 text-[#065B5E] focus:ring-[#8BDAC3] border-[#8BDAC3]">
+                                <span class="ml-2 text-gray-700">Бизнес</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input type="radio" name="category" value="Другое" class="h-4 w-4 text-[#065B5E] focus:ring-[#8BDAC3] border-[#8BDAC3]">
+                                <span class="ml-2 text-gray-700">Другое</span>
+                            </label>
+                        </div>
+                        <div id="categoryError" class="error-message hidden">Пожалуйста, выберите категорию</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="ideaImage" class="block text-gray-700 mb-2">Изображение (необязательно)</label>
+                        <div class="flex items-center">
+                            <label for="ideaImage" class="cursor-pointer">
+                                <div class="w-32 h-32 border-2 border-dashed border-[#8BDAC3] rounded-md flex items-center justify-center text-[#8BDAC3] hover:bg-[#8BDAC3]/10 transition">
+                                    <i class="fas fa-image text-2xl mr-2"></i>
+                                    <span class="text-sm">Загрузить</span>
+                                </div>
+                                <input type="file" id="ideaImage" class="hidden" accept="image/*">
+                            </label>
+                            <div class="ml-4 text-sm text-gray-500">Рекомендуемый размер: 800x400px</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-4 mt-6">
+                        <button type="button" id="cancelIdea" class="px-4 py-2 border border-[#065B5E] text-[#065B5E] rounded-md hover:bg-[#8BDAC3]/20 transition">
+                            Отмена
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                            Опубликовать идею
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">МостВектор</h3>
+                    <p class="text-gray-400 text-sm">Платформа для формирования междисциплинарных и межвузовских проектных команд.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Навигация</h3>
+                    <ul class="space-y-2">
+                        <li><a href="index.html" class="text-gray-400 hover:text-white text-sm">Главная</a></li>
+                        <li><a href="projects.html" class="text-gray-400 hover:text-white text-sm">Проекты</a></li>
+                        <li><a href="forum.html" class="text-gray-400 hover:text-white text-sm">Форум</a></li>
+                        <li><a href="ideas.html" class="text-gray-400 hover:text-white text-sm">Идеи</a></li>
+                        <li><a href="rating.html" class="text-gray-400 hover:text-white text-sm">Рейтинг</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Контакты</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-envelope mr-2"></i> contact@mostvector.ru</li>
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-phone mr-2"></i> +7 (123) 456-78-90</li>
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-map-marker-alt mr-2"></i> Москва, ул. Студенческая, 1</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Подписаться</h3>
+                    <p class="text-gray-400 text-sm mb-4">Будьте в курсе новых проектов и возможностей.</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Ваш email" class="px-3 py-2 bg-gray-700 text-white rounded-l-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] w-full">
+                        <button class="px-4 py-2 bg-[#065B5E] text-white rounded-r-md hover:bg-[#C198FF] transition">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="flex space-x-4 mt-4">
+                        <a href="#" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-vk"></i></a>
+                        <a href="#" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-telegram"></i></a>
+                        <a href="#" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm mb-4 md:mb-0">© 2025 МостВектор. Все права защищены.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white text-sm">Пользовательское соглашение</a>
+                    <a href="#" class="text-gray-400 hover:text-white text-sm">Политика конфиденциальности</a>
+                    <a href="#" class="text-gray-400 hover:text-white text-sm">FAQ</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobileMenuButton');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            
+            // Auth button state
+            const authButton = document.getElementById('authButton');
+            const userData = localStorage.getItem('currentUser');
+            
+            if (authButton) {
+                try {
+                    const currentUser = JSON.parse(userData);
+                    if (currentUser) {
+                        authButton.textContent = 'Личный кабинет';
+                        authButton.setAttribute('href', 'profile.html');
+                    } else {
+                        authButton.textContent = 'Войти';
+                        authButton.setAttribute('href', 'login.html');
+                    }
+                } catch (e) {
+                    console.error('Ошибка чтения currentUser:', e);
+                    authButton.textContent = 'Войти';
+                    authButton.setAttribute('href', 'login.html');
+                }
+            }
+            
+            // Idea modal functionality
+            const openIdeaModal = document.getElementById('openIdeaModal');
+            const ideaModal = document.getElementById('ideaModal');
+            const closeIdeaModal = document.getElementById('closeIdeaModal');
+            const cancelIdea = document.getElementById('cancelIdea');
+            
+            if (openIdeaModal && ideaModal && closeIdeaModal && cancelIdea) {
+                openIdeaModal.addEventListener('click', function() {
+                    ideaModal.classList.remove('hidden');
+                });
+                
+                closeIdeaModal.addEventListener('click', function() {
+                    ideaModal.classList.add('hidden');
+                });
+                
+                cancelIdea.addEventListener('click', function() {
+                    ideaModal.classList.add('hidden');
+                });
+            }
+            
+            // Tags functionality
+            const ideaTags = document.getElementById('ideaTags');
+            const selectedTags = document.getElementById('selectedTags');
+            const tagsError = document.getElementById('tagsError');
+            
+            if (ideaTags && selectedTags) {
+                ideaTags.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        
+                        const tagText = ideaTags.value.trim();
+                        if (tagText && selectedTags.children.length < 5) {
+                            // Create tag element
+                            const tag = document.createElement('div');
+                            tag.className = 'flex items-center px-2 py-1 bg-[#8BDAC3]/30 text-[#065B5E] text-xs rounded-full';
+                            tag.innerHTML = `
+                                ${tagText}
+                                <button type="button" class="ml-1 text-[#065B5E] hover:text-[#C198FF]">
+                                    <i class="fas fa-times text-xs"></i>
+                                </button>
+                            `;
+                            
+                            // Add remove functionality
+                            const removeBtn = tag.querySelector('button');
+                            removeBtn.addEventListener('click', function() {
+                                tag.remove();
+                                tagsError.classList.add('hidden');
+                            });
+                            
+                            selectedTags.appendChild(tag);
+                            ideaTags.value = '';
+                            
+                            if (selectedTags.children.length >= 5) {
+                                tagsError.classList.remove('hidden');
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Form validation
+            const ideaForm = document.getElementById('ideaForm');
+            if (ideaForm) {
+                ideaForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    let isValid = true;
+                    
+                    // Validate title
+                    const title = document.getElementById('ideaTitle');
+                    const titleError = document.getElementById('titleError');
+                    if (!title.value.trim()) {
+                        titleError.classList.remove('hidden');
+                        isValid = false;
+                    } else {
+                        titleError.classList.add('hidden');
+                    }
+                    
+                    // Validate description
+                    const description = document.getElementById('ideaDescription');
+                    const descriptionError = document.getElementById('descriptionError');
+                    if (!description.value.trim()) {
+                        descriptionError.classList.remove('hidden');
+                        isValid = false;
+                    } else {
+                        descriptionError.classList.add('hidden');
+                    }
+                    
+                    // Validate category
+                    const category = document.querySelector('input[name="category"]:checked');
+                    const categoryError = document.getElementById('categoryError');
+                    if (!category) {
+                        categoryError.classList.remove('hidden');
+                        isValid = false;
+                    } else {
+                        categoryError.classList.add('hidden');
+                    }
+                    
+                    if (isValid) {
+                        // Here you would typically submit the form data to the server
+                        alert('Идея успешно опубликована!');
+                        ideaModal.classList.add('hidden');
+                        ideaForm.reset();
+                        selectedTags.innerHTML = '';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

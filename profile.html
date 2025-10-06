@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Личный кабинет | МостВектор</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #8BDAC3 0%, #065B5E 50%, #C198FF 100%);
+        }
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #e5e7eb #f3f4f6;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: #e5e7eb;
+            border-radius: 6px;
+        }
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+    
+/* ── Modal layout tweaks ─────────────────────────── */
+#editProfileModal{ z-index:1000; }
+#editProfileModal .tab-content{
+    padding-left:1.25rem;
+    padding-right:1.25rem;
+}
+#editProfileModal .contact-item{
+    padding-left:0.75rem;
+    padding-right:0.75rem;
+}
+#editProfileModal #add-contact{
+    margin-left:0.75rem;
+    margin-right:0.75rem;
+}
+/* add breathing room for footer buttons */
+#editProfileModal .p-6{ padding-bottom: 7rem !important; }
+#editProfileModal .modal-buttons,
+#editProfileModal .mt-6.flex{ margin-bottom: 2rem !important; }
+</style>
+
+<style>
+  /* extra breathing room around controls in profile modal */
+  #contacts-tab { padding-bottom: 1rem; }
+  #add-contact  { margin-top: 1rem; margin-bottom: 1rem; }
+</style>
+<script>
+/* ------------ Per‑user storage shim ------------ */
+(function(){
+  const store = window.localStorage;
+  const g  = store.getItem.bind(store);
+  const s  = store.setItem.bind(store);
+  const rm = store.removeItem.bind(store);
+
+  function persistCurrent(value){
+    try{
+      const obj = JSON.parse(value);
+      const id  = obj.uid || obj.email || obj.fullName || 'unknown';
+      const users = JSON.parse(g('users') || '{}');
+      const prev  = users[id] || {};
+
+      // FIX: Эта логика была исправлена.
+      // Если новый объект пользователя ('obj') содержит стандартный аватар с pravatar,
+      // а в предыдущем сохраненном объекте ('prev') был настоящий, загруженный пользователем аватар,
+      // то мы сохраняем старый аватар, чтобы не потерять его.
+      if (obj.avatar && prev.avatar && /i\.pravatar\.cc/.test(obj.avatar) && !/i\.pravatar\.cc/.test(prev.avatar)) {
+        obj.avatar = prev.avatar;
+      }
+
+      users[id] = { ...prev, ...obj };
+      /* store avatar in avatars map */
+      if(obj.avatar){
+        try{
+          const amap = JSON.parse(g('avatars') || '{}');
+          amap[id] = obj.avatar;
+          s('avatars', JSON.stringify(amap));
+        }catch(e){}
+      }
+      s('users', JSON.stringify(users));
+      s('currentUserId', id);
+      s('currentUser', JSON.stringify(users[id])); // merged version
+    }catch(e){
+      s('currentUser', value);
+    }
+  }
+
+  // migrate legacy key once
+  const legacy = g('currentUser');
+  if (legacy) persistCurrent(legacy);
+
+  // intercept writes
+  store.setItem = function(key, value){
+    if (key === 'currentUser'){
+      persistCurrent(value);
+      return;
+    }
+    s(key,value);
+  };
+
+  // intercept reads
+  store.getItem = function(key){
+    if (key === 'currentUser'){
+      const users = JSON.parse(g('users') || '{}');
+      const id = g('currentUserId');
+      if (id && users[id]) return JSON.stringify(users[id]);
+      return g('currentUser'); // fallback
+    }
+    return g(key);
+  };
+
+  // keep tidy on logout
+  store.removeItem = function(key){
+    if (key === 'currentUser'){
+      rm('currentUserId');
+    }
+    rm(key);
+  };
+})();
+</script>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+<!-- Header -->
+<header class="bg-white shadow-sm sticky top-0 z-50">
+<div class="container mx-auto px-4 py-3 flex items-center justify-between">
+<div class="flex items-center space-x-4">
+<a class="flex items-center space-x-2" href="index.html">
+<img class="w-10 h-10" src="/Логотип МостВектор.png"/>
+<span class="text-xl font-bold text-[#065B5E] hidden md:block">МостВектор</span>
+</a>
+<nav class="hidden lg:flex space-x-1">
+<div class="relative group">
+<button class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium flex items-center space-x-1">
+<span>Проекты</span>
+<i class="fas fa-chevron-down text-xs"></i>
+</button>
+<div class="absolute left-0 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block top-full">
+<a class="block px-4 py-2 text-gray-800 hover:bg-gray-100" href="projects.html">Все проекты</a>
+<a class="block px-4 py-2 text-gray-800 hover:bg-gray-100" href="projects.html">Создать проект</a>
+<a class="block px-4 py-2 text-gray-800 hover:bg-gray-100" href="projects.html">Популярные проекты</a>
+<a class="block px-4 py-2 text-gray-800 hover:bg-gray-100" href="projects.html">Формирование команд</a>
+</div>
+</div>
+<a class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium" href="forum.html">Форум</a>
+<a class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium" href="ideas.html">Идеи</a>
+<a class="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium" href="rating.html">Рейтинг</a>
+<a href="chat.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Чаты</a>
+</nav>
+</div>
+<div class="flex items-center space-x-4">
+<div class="relative hidden md:block">
+<input class="pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Поиск..." type="text"/>
+<i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+</div>
+<div class="relative">
+<button class="p-2 text-gray-600 hover:text-gray-900 relative">
+<i class="far fa-bell text-xl"></i>
+<span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full top-0.5"></span>
+</button>
+</div>
+<div class="flex items-center space-x-2">
+<img id="userAvatarSmall" class="w-8 h-8 rounded-full object-cover hidden" alt="avatar">
+<div class="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-white font-medium" id="userInitials"></div>
+<span class="hidden md:inline text-gray-700 font-medium" id="userName"></span>
+</div>
+</div>
+</div>
+</header>
+<div class="container mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6">
+<aside class="w-full lg:w-64 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 p-4 h-fit lg:h-[calc(100vh-120px)] lg:sticky lg:top-24 overflow-y-auto sidebar">
+<div class="flex flex-col items-center mb-6">
+<div class="relative mb-3">
+  <img id="userAvatarLarge" class="w-24 h-24 rounded-full object-cover hidden" alt="avatar">
+  <div class="w-24 h-24 rounded-full gradient-bg flex items-center justify-center text-white text-3xl font-bold" id="userInitialsLarge"></div>
+</div>
+<h2 class="text-xl font-bold text-gray-800 text-center" id="userNameLarge"></h2>
+<p class="text-gray-500 text-sm">Студент, МГУ</p>
+<div class="mt-2 flex items-center text-yellow-400">
+<i class="fas fa-star"></i>
+<i class="fas fa-star"></i>
+<i class="fas fa-star"></i>
+<i class="fas fa-star"></i>
+<i class="fas fa-star-half-alt"></i>
+<span class="ml-1 text-gray-700">4.7</span>
+</div>
+</div>
+<nav class="space-y-1">
+<a class="flex items-center space-x-3 px-3 py-2 bg-[#8BDAC3]/20 text-[#065B5E] rounded-md font-medium" href="#">
+<i class="fas fa-user-circle w-5 text-center"></i>
+<span>Профиль</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-md" href="projects.html?tab=my">
+<i class="fas fa-project-diagram w-5 text-center"></i>
+<span>Проекты</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-md" href="projects.html?tab=my">
+<i class="fas fa-lightbulb w-5 text-center"></i>
+<span>Мои идеи</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-md" href="projects.html?tab=my">
+<i class="fas fa-star w-5 text-center"></i>
+<span>Мой рейтинг</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-md" href="projects.html?tab=my">
+<i class="fas fa-award w-5 text-center"></i>
+<span>Мои достижения</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-md" href="projects.html?tab=my">
+<i class="fas fa-comments w-5 text-center"></i>
+<span>Чаты</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-md" href="projects.html?tab=my">
+<i class="fas fa-cog w-5 text-center"></i>
+<span>Настройки</span>
+</a>
+</nav>
+<div class="mt-6 pt-4 border-t border-gray-200">
+<button id="logoutBtn" class="w-full flex items-center space-x-3 px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-md">
+<i class="fas fa-sign-out-alt w-5 text-center"></i>
+<span>Выйти</span>
+</button>
+</div>
+</aside>
+<main class="flex-1">
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
+<div class="flex flex-col md:flex-row md:items-center md:justify-between">
+<div>
+<h1 class="text-2xl font-bold text-gray-800">Личный кабинет</h1>
+<p class="text-gray-600">Управляйте вашим профилем и активностью на платформе</p>
+</div>
+<div class="mt-4 md:mt-0">
+<button class="px-4 py-2 bg-[#065B5E] text-white rounded-md hover:opacity-90 transition flex items-center space-x-2" id="editProfileBtn">
+<i class="fas fa-edit"></i>
+<span>Редактировать профиль</span>
+</button>
+</div>
+</div>
+</div>
+<div class="grid md:grid-cols-2 gap-6 mb-6">
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+<h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+<i class="fas fa-user-circle mr-2 text-[#065B5E]"></i>
+                        Личная информация
+                    </h2>
+<div class="space-y-4">
+<div>
+<label class="block text-sm text-gray-500 mb-1">ФИО</label>
+<p class="text-gray-800" id="fullName">Петров Иван Дмитриевич</p>
+</div>
+<div>
+<label class="block text-sm text-gray-500 mb-1">Дата рождения</label>
+<p class="text-gray-800" id="birthDate">15.03.2000</p>
+</div>
+<div>
+<label class="block text-sm text-gray-500 mb-1">Роль</label>
+<p class="text-gray-800">Студент</p>
+</div>
+<div>
+<label class="block text-sm text-gray-500 mb-1">ВУЗ</label>
+<p class="text-gray-800" id="university">Московский государственный университет им. М.В. Ломоносова</p>
+</div>
+<div>
+<label class="block text-sm text-gray-500 mb-1">Курс</label>
+<p class="text-gray-800" id="course">3 курс</p>
+</div>
+<div>
+<label class="block text-sm text-gray-500 mb-1">Направление подготовки</label>
+<p class="text-gray-800" id="specialization">Прикладная математика и информатика</p>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+<h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+<i class="fas fa-info-circle mr-2 text-[#065B5E]"></i>
+                        О себе
+                    </h2>
+<div class="prose prose-sm text-gray-800" id="aboutText"></div>
+<div class="prose prose-sm text-gray-800 test-data" style="display: none;">
+<p>Студент 3 курса факультета ВМК МГУ. Интересуюсь машинным обучением, анализом данных и разработкой программного обеспечения.</p>
+<p>Участвовал в нескольких хакатонах и научных конференциях. Имею опыт работы с Python, TensorFlow, PyTorch и SQL.</p>
+<p>Ищу интересные проекты в области Data Science и AI, где смогу применить свои знания и получить новый опыт.</p>
+</div>
+<div class="mt-4">
+<h3 class="text-sm font-medium text-gray-700 mb-2">Контакты</h3>
+<div class="flex flex-wrap gap-2" id="contactsList"></div>
+<div class="flex flex-wrap gap-2 test-data" style="display: none;">
+<a class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm flex items-center" href="#">
+<i class="fas fa-envelope mr-1 text-[#065B5E]"></i>
+                                ivan.petrov@mail.ru
+                            </a>
+<a class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm flex items-center" href="#">
+<i class="fab fa-telegram mr-1 text-[#065B5E]"></i>
+                                @ivanpetrov
+                            </a>
+<a class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm flex items-center" href="#">
+<i class="fab fa-github mr-1 text-gray-800"></i>
+                                github.com/ivanpetrov
+                            </a>
+</div>
+</div>
+</div>
+</div>
+<div class="mb-6 text-right"><button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-sm" id="toggleTestData">Показать тестовые данные</button></div>
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-lg font-semibold text-gray-800 flex items-center">
+<i class="fas fa-tools mr-2 text-[#065B5E]"></i>
+                        Компетенции
+                    </h2>
+<button class="text-sm text-[#065B5E] hover:opacity-80 font-medium flex items-center" id="addCompetencyBtn" >
+<i class="fas fa-plus mr-1"></i>
+                        Добавить
+                    </button>
+</div>
+<div id="competenciesList" class="flex flex-wrap gap-2"></div>
+<div class="flex flex-wrap gap-2 test-data" style="display: none;">
+<div class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm flex items-center">
+                        Python
+                        <span class="ml-1 text-green-600">✓</span>
+</div>
+<div class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm flex items-center">
+                        Машинное обучение
+                        <span class="ml-1 text-green-600">✓</span>
+</div>
+<div class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm flex items-center">
+                        TensorFlow
+                        <span class="ml-1 text-green-600">✓</span>
+</div>
+<div class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm flex items-center">
+                        SQL
+                        <span class="ml-1 text-blue-600">✓</span>
+</div>
+<div class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                        JavaScript (изучаю)
+                    </div>
+<div class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm flex items-center">
+                        React
+                        <span class="ml-1 text-gray-500 animate-pulse">⏳</span>
+</div>
+</div>
+<div class="mt-4 text-sm text-gray-500 test-data" style="display: none;">
+<p>✓ - подтвержденные компетенции (тест/сертификат/подтверждение руководителя)</p>
+</div>
+</div>
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-lg font-semibold text-gray-800 flex items-center">
+<i class="fas fa-project-diagram mr-2 text-[#065B5E]"></i>
+                        Мои проекты
+                    </h2>
+<button class="text-sm text-[#065B5E] hover:opacity-80 font-medium flex items-center">
+<i class="fas fa-plus mr-1"></i>
+                        Создать проект
+                    </button>
+</div>
+<div class="grid md:grid-cols-2 gap-4 test-data" style="display: none;">
+<div class="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-medium text-gray-800">Разработка чат-бота для университета</h3>
+<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Активный</span>
+</div>
+<p class="text-sm text-gray-600 mb-3">AI-ассистент для ответов на частые вопросы студентов.</p>
+<div class="flex flex-wrap gap-2 mb-3 test-data" style="display: none;">
+<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Python</span>
+<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">NLP</span>
+<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Telegram API</span>
+</div>
+<div class="flex items-center justify-between text-xs text-gray-500">
+<span><i class="fas fa-users mr-1"></i> 4 участника</span>
+<span><i class="far fa-clock mr-1"></i> 3 месяца</span>
+</div>
+</div>
+<div class="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-medium text-gray-800">Анализ образовательных данных</h3>
+<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Завершен</span>
+</div>
+<p class="text-sm text-gray-600 mb-3">Исследование успеваемости студентов на основе открытых данных.</p>
+<div class="flex flex-wrap gap-2 mb-3 test-data" style="display: none;">
+<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Python</span>
+<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Pandas</span>
+<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Data Visualization</span>
+</div>
+<div class="flex items-center justify-between text-xs text-gray-500">
+<span><i class="fas fa-users mr-1"></i> 3 участника</span>
+<span><i class="fas fa-star mr-1 text-yellow-400"></i> 4.8</span>
+</div>
+</div>
+</div>
+<div class="test-data" style="display: none;"><button class="show-all-projects-btn mt-4 w-full py-2 border border-[#065B5E] text-[#065B5E] rounded-md hover:bg-[#8BDAC3]/20 transition">Показать все проекты</button></div>
+</div>
+<div class="grid md:grid-cols-2 gap-6 mb-6">
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 test-data" style="display:none;">
+<h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+<i class="fas fa-star mr-2 text-[#065B5E]"></i>
+                        Мой рейтинг
+                    </h2>
+<div class="flex flex-col items-center mb-4">
+<div class="relative w-32 h-32 mb-3">
+<svg class="w-full h-full" viewbox="0 0 36 36">
+<path d="M18 2.0845
+                                        a 15.9155 15.9155 0 0 1 0 31.831
+                                        a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e6e6e6" stroke-width="3"></path>
+<path class="progress-ring__circle" d="M18 2.0845
+                                        a 15.9155 15.9155 0 0 1 0 31.831
+                                        a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#7c3aed" stroke-dasharray="85, 100" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center top-full">
+<span class="text-2xl font-bold text-gray-800">85%</span>
+</div>
+</div>
+<div class="text-center">
+<p class="text-gray-800 font-medium">Вы в топе 15% участников</p>
+<p class="text-sm text-gray-500">Ваш рейтинг: 4.7 из 5</p>
+</div>
+</div>
+<div class="space-y-3">
+<div>
+<div class="flex justify-between text-sm mb-1">
+<span class="text-gray-700">Профессиональные навыки</span>
+<span class="text-gray-800 font-medium">4.8</span>
+</div>
+<div class="w-full bg-gray-200 rounded-full h-2">
+<div class="bg-blue-500 h-2 rounded-full" style="width: 96%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-sm mb-1">
+<span class="text-gray-700">Коммуникация</span>
+<span class="text-gray-800 font-medium">4.5</span>
+</div>
+<div class="w-full bg-gray-200 rounded-full h-2">
+<div class="bg-green-500 h-2 rounded-full" style="width: 90%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-sm mb-1">
+<span class="text-gray-700">Ответственность</span>
+<span class="text-gray-800 font-medium">4.7</span>
+</div>
+<div class="w-full bg-gray-200 rounded-full h-2">
+<div class="bg-purple-500 h-2 rounded-full" style="width: 94%"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-lg font-semibold text-gray-800 flex items-center">
+<i class="fas fa-award mr-2 text-[#065B5E]"></i>
+                            Мои достижения
+                        </h2>
+<button class="text-sm text-[#065B5E] hover:opacity-80 font-medium flex items-center">
+<i class="fas fa-plus mr-1"></i>
+                            Добавить
+                        </button>
+</div>
+<div class="grid grid-cols-3 gap-4 test-data" style="display: none;">
+<div class="flex flex-col items-center text-center">
+<div class="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 mb-2">
+<i class="fas fa-trophy text-2xl"></i>
+</div>
+<p class="text-sm font-medium text-gray-800">Лучший участник проекта</p>
+<p class="text-xs text-gray-500">Май 2023</p>
+</div>
+<div class="flex flex-col items-center text-center">
+<div class="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-2">
+<i class="fas fa-medal text-2xl"></i>
+</div>
+<p class="text-sm font-medium text-gray-800">2 место на хакатоне</p>
+<p class="text-xs text-gray-500">Апрель 2023</p>
+</div>
+<div class="flex flex-col items-center text-center">
+<div class="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mb-2">
+<i class="fas fa-certificate text-2xl"></i>
+</div>
+<p class="text-sm font-medium text-gray-800">Сертификат Data Science</p>
+<p class="text-xs text-gray-500">Февраль 2023</p>
+</div>
+</div>
+<div class="test-data" style="display: none;"><button class="show-all-achievements-btn mt-4 w-full py-2 border border-[#065B5E] text-[#065B5E] rounded-md hover:bg-[#8BDAC3]/20 transition">Показать все достижения</button></div>
+</div>
+</div>
+<div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-lg font-semibold text-gray-800 flex items-center">
+<i class="fas fa-lightbulb mr-2 text-[#065B5E]"></i>
+                        Мои идеи
+                    </h2>
+<button class="text-sm text-[#065B5E] hover:opacity-80 font-medium flex items-center">
+<i class="fas fa-plus mr-1"></i>
+                        Добавить идею
+                    </button>
+</div>
+<div class="space-y-4 test-data" style="display: none;">
+<div class="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-medium text-gray-800">Платформа для обмена учебными материалами</h3>
+<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Опубликовано</span>
+</div>
+<p class="text-sm text-gray-600 mb-3">Система, где студенты могут обмениваться конспектами, методичками и другими учебными материалами с рейтингом качества.</p>
+<div class="flex flex-wrap gap-2 mb-3 test-data" style="display: none;">
+<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Образование</span>
+<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Социальный проект</span>
+</div>
+<div class="flex items-center justify-between text-xs text-gray-500">
+<span><i class="far fa-thumbs-up mr-1"></i> 24</span>
+<span><i class="far fa-comment mr-1"></i> 8 комментариев</span>
+</div>
+</div>
+<div class="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition">
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-medium text-gray-800">Приложение для изучения алгоритмов</h3>
+<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Черновик</span>
+</div>
+<p class="text-sm text-gray-600 mb-3">Интерактивная платформа с визуализацией работы алгоритмов и структур данных.</p>
+<div class="flex flex-wrap gap-2 mb-3 test-data" style="display: none;">
+<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Образование</span>
+<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Программирование</span>
+</div>
+<button class="text-sm text-[#065B5E] hover:opacity-80 font-medium">Опубликовать</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<footer class="bg-gray-800 text-white py-12">
+<div class="container mx-auto px-4">
+<div class="grid md:grid-cols-4 gap-8">
+<div>
+<h3 class="text-lg font-semibold mb-4">МостВектор</h3>
+<p class="text-gray-400 text-sm">Платформа для формирования междисциплинарных и межвузовских проектных команд.</p>
+</div>
+<div>
+<h3 class="text-lg font-semibold mb-4">Навигация</h3>
+<ul class="space-y-2">
+<li><a class="text-gray-400 hover:text-white text-sm" href="#">Главная</a></li>
+<li><a class="text-gray-400 hover:text-white text-sm" href="#">Проекты</a></li>
+<li><a class="text-gray-400 hover:text-white text-sm" href="#">Форум</a></li>
+<li><a class="text-gray-400 hover:text-white text-sm" href="#">Идеи</a></li>
+<li><a class="text-gray-400 hover:text-white text-sm" href="#">Рейтинг</a></li>
+</ul>
+</div>
+<div>
+<h3 class="text-lg font-semibold mb-4">Контакты</h3>
+<ul class="space-y-2">
+<li class="flex items-center text-gray-400 text-sm"><i class="fas fa-envelope mr-2"></i> contact@uniteam.ru</li>
+<li class="flex items-center text-gray-400 text-sm"><i class="fas fa-phone mr-2"></i> +7 (123) 456-78-90</li>
+<li class="flex items-center text-gray-400 text-sm"><i class="fas fa-map-marker-alt mr-2"></i> Москва, ул. Студенческая, 1</li>
+</ul>
+</div>
+<div>
+<h3 class="text-lg font-semibold mb-4">Подписаться</h3>
+<p class="text-gray-400 text-sm mb-4">Будьте в курсе новых проектов и возможностей.</p>
+<div class="flex">
+<input class="px-3 py-2 bg-gray-700 text-white rounded-l-md focus:outline-none focus:ring-2 focus:ring-[#C198FF] w-full" placeholder="Ваш email" type="email"/>
+<button class="px-4 py-2 bg-[#065B5E] text-white rounded-r-md hover:opacity-90 transition">
+<i class="fas fa-paper-plane"></i>
+</button>
+</div>
+<div class="flex space-x-4 mt-4">
+<a class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]" href="#"><i class="fab fa-vk"></i></a>
+<a class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]" href="#"><i class="fab fa-telegram"></i></a>
+<a class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]" href="#"><i class="fab fa-youtube"></i></a>
+</div>
+</div>
+</div>
+<div class="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+<p class="text-gray-400 text-sm mb-4 md:mb-0">© 2025 МостВектор. Все права защищены.</p>
+<div class="flex space-x-4">
+<a class="text-gray-400 hover:text-white text-sm" href="#">Пользовательское соглашение</a>
+<a class="text-gray-400 hover:text-white text-sm" href="#">Политика конфиденциальности</a>
+<a class="text-gray-400 hover:text-white text-sm" href="#">FAQ</a>
+</div>
+</div>
+</div>
+</footer>
+<script>
+        // Progress circle animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const circle = document.querySelector('.progress-ring__circle');
+            if (!circle) return;
+            const circumference = circle.getTotalLength();
+            
+            circle.style.strokeDasharray = `${circumference} ${circumference}`;
+            circle.style.strokeDashoffset = circumference;
+            
+            const offset = circumference - (85 / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+        });
+    </script>
+<script>
+
+    function updateAvatarDisplays(url){
+        const big = document.getElementById('userAvatarLarge');
+        const small = document.getElementById('userAvatarSmall');
+        const initialsBig = document.getElementById('userInitialsLarge');
+        const initialsSmall = document.getElementById('userInitials');
+        
+        // Показываем аватар только если он есть и не стандартный
+        if(url && !isDefaultAvatar(url)){
+            big.src = url; 
+            big.classList.remove('hidden');
+            small.src = url; 
+            small.classList.remove('hidden');
+            initialsBig.classList.add('hidden');
+            initialsSmall.classList.add('hidden');
+        } else {
+            // Иначе показываем инициалы
+            big.classList.add('hidden');
+            small.classList.add('hidden');
+            initialsBig.classList.remove('hidden');
+            initialsSmall.classList.remove('hidden');
+        }
+    }
+    
+    // --- Avatar persistence helpers ---
+    function getUserId(userObj){
+        if(!userObj) return 'unknown';
+        return userObj.uid || userObj.email || userObj.fullName || 'unknown';
+    }
+    
+    function saveAvatarForUser(userObj, avatarDataUrl){
+        if(!avatarDataUrl) return;
+        const id = getUserId(userObj);
+        try{
+            const map = JSON.parse(localStorage.getItem('avatars') || '{}');
+            map[id] = avatarDataUrl;
+            localStorage.setItem('avatars', JSON.stringify(map));
+        }catch(e){ console.error('avatar map save error', e); }
+    }
+    
+    function loadAvatarForUser(userObj){
+        const id = getUserId(userObj);
+        try{
+            const map = JSON.parse(localStorage.getItem('avatars') || '{}');
+            return map[id] || null;
+        }catch(e){ return null; }
+    }
+
+    // Определяем стандартный аватар (pravatar)
+    function isDefaultAvatar(url){
+        return url && url.includes('i.pravatar.cc');
+    }
+
+    // Получить инициалы из полного имени
+    function getInitials(fullName){
+        if(!fullName) return '';
+        const parts = fullName.trim().split(/\s+/);
+        return ((parts[0]||'')[0]||'') + ((parts[1]||'')[0]||'');
+    }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const toggleBtn = document.getElementById('toggleTestData');
+    let visible = false;
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function () {
+            visible = !visible;
+            document.querySelectorAll('.test-data').forEach(el => {
+                el.style.display = visible ? '' : 'none';
+            });
+            toggleBtn.textContent = visible ? 'Скрыть тестовые данные' : 'Показать тестовые данные';
+
+            // Обновляем кнопки и рейтинг
+            const projectsBtn = document.querySelector('.show-all-projects-btn');
+            const achievesBtn = document.querySelector('.show-all-achievements-btn');
+            if (visible) {
+                if (projectsBtn) projectsBtn.textContent = 'Показать все проекты (5)';
+                if (achievesBtn) achievesBtn.textContent = 'Показать все достижения (7)';
+            } else {
+                if (projectsBtn) projectsBtn.textContent = 'Показать все проекты';
+                if (achievesBtn) achievesBtn.textContent = 'Показать все достижения';
+            }
+            const circle = document.querySelector('.progress-ring__circle');
+            if (circle) {
+                const circumference = circle.getTotalLength();
+                circle.style.strokeDasharray = `${circumference} ${circumference}`;
+                circle.style.strokeDashoffset = visible
+                    ? circumference - (85 / 100) * circumference
+                    : circumference;
+            }
+        });
+    }
+});
+</script><script>
+document.addEventListener('DOMContentLoaded', function () {
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    if (user) {
+        // Загружаем сохраненный аватар если есть
+        if (!user.avatar || isDefaultAvatar(user.avatar)) {
+            user.avatar = loadAvatarForUser(user);
+        }
+        
+        if (user.fullName) {
+            document.getElementById('fullName').textContent = user.fullName;
+            const [last, first] = user.fullName.split(' ');
+            document.getElementById('userName').textContent = `${last} ${first}`;
+            document.getElementById('userNameLarge').textContent = `${last} ${first}`;
+            const initialsUp = getInitials(user.fullName).toUpperCase();
+            document.getElementById('userInitials').textContent = initialsUp;
+            document.getElementById('userInitialsLarge').textContent = initialsUp;
+        }
+        
+        if (user.birthDate) document.getElementById('birthDate').textContent = user.birthDate;
+        if (user.university) document.getElementById('university').textContent = user.university;
+        if (user.course) {
+            const displayVal = (typeof user.course === 'string' ? user.course : String(user.course));
+            document.getElementById('course').textContent = displayVal.includes('курс') ? displayVal : displayVal + ' курс';
+        }
+        if (user.specialization) document.getElementById('specialization').textContent = user.specialization;
+
+        // "О себе"
+        if (user.about) {
+            const aboutEl = document.getElementById('aboutText');
+            if (aboutEl) aboutEl.innerHTML = user.about.replace(/\n/g, '<br>');
+        }
+
+        // Обновляем аватар (показываем только если не стандартный)
+        updateAvatarDisplays(user.avatar);
+        
+        // Контакты
+        function createContactElement(type, value) {
+            let iconClass;
+            switch(type) {
+                case 'email': iconClass = 'fas fa-envelope'; break;
+                case 'telegram': iconClass = 'fab fa-telegram'; break;
+                case 'github': iconClass = 'fab fa-github'; break;
+                case 'vk': iconClass = 'fab fa-vk'; break;
+                default: iconClass = 'fas fa-globe';
+            }
+            const el = document.createElement('a');
+            el.className = 'px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm flex items-center';
+            el.href = '#';
+            el.innerHTML = `<i class="${iconClass} mr-1 ${type === 'github' ? 'text-gray-800' : 'text-[#065B5E]'}"></i>${value}`;
+            return el;
+        }
+
+        const contactsList = document.getElementById('contactsList');
+        if (contactsList) {
+            contactsList.innerHTML = '';
+            if (user.contacts && user.contacts.length) {
+                user.contacts.forEach(c => contactsList.appendChild(createContactElement(c.type, c.value)));
+            }
+        }
+    } else {
+        window.location.href = 'login.html';
+    }
+
+    const toggleBtn = document.getElementById('toggleTestData');
+    let visible = false;
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function () {
+            visible = !visible;
+            document.querySelectorAll('.test-data').forEach(el => {
+                el.style.display = visible ? '' : 'none';
+            });
+            toggleBtn.textContent = visible ? 'Скрыть тестовые данные' : 'Показать тестовые данные';
+
+            // Если включили тестовые данные — заполним рейтинг
+            if (visible) {
+                document.querySelector('.progress-ring__circle')?.setAttribute('stroke-dasharray', '85, 100');
+                document.querySelector('.progress-ring__circle')?.setAttribute('stroke-dashoffset', '8.46');
+            }
+        });
+    }
+
+    // Событие на кнопку Выйти
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            // Сохраняем аватар в отдельное хранилище
+            try {
+                const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                if (userData && userData.avatar) {
+                    saveAvatarForUser(userData, userData.avatar);
+                }
+            } catch (e) { console.error('avatar persist error', e); }
+
+            // Очищаем только ключи авторизации
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('currentUserId');
+            
+            // Переходим на страницу входа
+            window.location.href = 'login.html';
+        });
+    }
+});
+</script>
+<div id="editProfileModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold text-gray-800">Редактирование профиля</h3>
+        <button id="closeEditModal" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="flex border-b mb-4">
+        <button class="tab-btn py-2 px-4 font-medium text-[#065B5E] border-b-2 border-[#065B5E]" data-tab="personal">Личная информация</button>
+        <button class="tab-btn py-2 px-4 font-medium text-gray-500" data-tab="about">О себе</button>
+        <button class="tab-btn py-2 px-4 font-medium text-gray-500" data-tab="contacts">Контакты</button>
+      </div>
+      
+      <div id="personal-tab" class="tab-content">
+        <img id="avatarPreview" class="w-20 h-20 rounded-full object-cover mb-3 hidden" alt="preview"/>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Аватар</label>
+            <input type="file" id="editAvatar" accept="image/*" class="w-full">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ФИО</label>
+            <input type="text" id="editFullName" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Дата рождения</label>
+            <input type="date" id="editBirthDate" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ВУЗ</label>
+            <input type="text" id="editUniversity" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Курс</label>
+              <select id="editCourse" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                <option>1 курс</option>
+                <option>2 курс</option>
+                <option>3 курс</option>
+                <option>4 курс</option>
+                <option>5 курс</option>
+                <option>6 курс</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Направление</label>
+              <input type="text" id="editSpecialization" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="about-tab" class="tab-content hidden">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
+          <textarea id="editAbout" rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+        </div>
+      </div>
+      
+      <div id="contacts-tab" class="tab-content hidden">
+        <div id="contacts-container"></div>
+        <button id="add-contact" class="mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md flex items-center">
+          <i class="fas fa-plus mr-2"></i>
+          Добавить контакт
+        </button>
+      </div>
+      
+      <div class="mt-6 flex justify-end space-x-3">
+        <button id="cancelEdit" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">Отмена</button>
+        <button id="saveProfile" class="mr-6 px-4 py-2 bg-[#065B5E] text-white rounded-md hover:opacity-90">Сохранить изменения</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Helper: create contact line element
+  function createContactItemElement(type = 'email', value = '') {
+    const contactItem = document.createElement('div');
+    contactItem.className = 'contact-item flex items-center mb-3 px-2';
+    contactItem.innerHTML = `
+      <select class="contact-type w-32 px-3 py-2 border border-gray-300 rounded-l-md">
+        <option value="email" ${type === 'email' ? 'selected' : ''}>Почта</option>
+        <option value="telegram" ${type === 'telegram' ? 'selected' : ''}>Telegram</option>
+        <option value="github" ${type === 'github' ? 'selected' : ''}>GitHub</option>
+        <option value="vk" ${type === 'vk' ? 'selected' : ''}>VK</option>
+        <option value="website" ${type === 'website' ? 'selected' : ''}>Сайт</option>
+      </select>
+      <input type="text" class="contact-value flex-1 px-3 py-2 border-t border-b border-gray-300" value="${value}">
+      <button class="remove-contact px-3 py-2 bg-gray-100 border border-gray-300 rounded-r-md hover:bg-gray-200">
+        <i class="fas fa-trash text-red-500"></i>
+      </button>
+    `;
+    contactItem.querySelector('.remove-contact').addEventListener('click', () => contactItem.remove());
+    return contactItem;
+  }
+  
+  // Обработчики для модального окна
+  document.addEventListener('DOMContentLoaded', function() {
+    // Открытие модального окна
+    document.getElementById('editProfileBtn').addEventListener('click', function() {
+      const userData = JSON.parse(localStorage.getItem('currentUser')) || {};
+      document.getElementById('editFullName').value = userData.fullName || '';
+      document.getElementById('editBirthDate').value = userData.birthDate ? formatDateForInput(userData.birthDate) : '';
+      document.getElementById('editUniversity').value = userData.university || '';
+      const coursePrefill = userData.course || '';
+      if (coursePrefill) {
+          const formatted = String(coursePrefill).includes('курс') ? String(coursePrefill) : coursePrefill + ' курс';
+          document.getElementById('editCourse').value = formatted;
+      } else {
+          document.getElementById('editCourse').value = '';
+      }
+      document.getElementById('editSpecialization').value = userData.specialization || '';
+      document.getElementById('editAbout').value = userData.about || '';
+      
+      // Avatar preview
+      if (userData.avatar && !isDefaultAvatar(userData.avatar)) {
+         const avatarPreview = document.getElementById('avatarPreview');
+         if (avatarPreview) {
+             avatarPreview.src = userData.avatar;
+             avatarPreview.classList.remove('hidden');
+         }
+      }
+
+      const contactsContainer = document.getElementById('contacts-container');
+      contactsContainer.innerHTML = '';
+      if (userData.contacts && userData.contacts.length) {
+        userData.contacts.forEach(c => {
+           contactsContainer.appendChild(createContactItemElement(c.type, c.value));
+        });
+      } else {
+        // если нет контактов, создаём одну пустую строку
+        contactsContainer.appendChild(createContactItemElement('email', ''));
+      }
+
+      document.getElementById('editProfileModal').classList.remove('hidden');
+    });
+
+    // Закрытие модального окна
+    document.getElementById('closeEditModal').addEventListener('click', closeModal);
+    document.getElementById('cancelEdit').addEventListener('click', closeModal);
+    
+    function closeModal() {
+      document.getElementById('editProfileModal').classList.add('hidden');
+    }
+
+    // Переключение вкладок
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        // Убираем активный класс у всех кнопок
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.classList.remove('active', 'text-[#065B5E]');
+          b.classList.add('text-gray-500');
+        });
+        
+        // Добавляем активный класс текущей кнопке
+        this.classList.add('active', 'text-[#065B5E]');
+        this.classList.remove('text-gray-500');
+        
+        // Скрываем все вкладки
+        document.querySelectorAll('.tab-content').forEach(tab => {
+          tab.classList.add('hidden');
+        });
+        
+        // Показываем нужную вкладку
+        document.getElementById(`${this.dataset.tab}-tab`).classList.remove('hidden');
+      });
+    });
+
+    // Загрузка аватара
+    document.getElementById('editAvatar')?.addEventListener('change', function(e){
+         if(this.files && this.files[0]){
+            const reader = new FileReader();
+            reader.onloadend = ()=>{ 
+                const avatarPreview = document.getElementById('avatarPreview');
+                avatarPreview.src = reader.result;
+                avatarPreview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(this.files[0]);
+         }
+    });
+
+    // Добавление нового контакта
+    document.getElementById('add-contact').addEventListener('click', function() {
+      const container = document.getElementById('contacts-container');
+      const newContact = document.createElement('div');
+      newContact.className = 'contact-item flex items-center mb-3 px-2';
+      newContact.innerHTML = `
+        <select class="contact-type w-32 px-3 py-2 border border-gray-300 rounded-l-md">
+          <option value="email">Почта</option>
+          <option value="telegram">Telegram</option>
+          <option value="github">GitHub</option>
+          <option value="vk">VK</option>
+          <option value="website">Сайт</option>
+        </select>
+        <input type="text" class="contact-value flex-1 px-3 py-2 border-t border-b border-gray-300" placeholder="Ваш контакт">
+        <button class="remove-contact px-3 py-2 bg-gray-100 border border-gray-300 rounded-r-md hover:bg-gray-200">
+          <i class="fas fa-trash text-red-500"></i>
+        </button>
+      `;
+      container.appendChild(newContact);
+      
+      // Добавляем обработчик удаления для новой кнопки
+      newContact.querySelector('.remove-contact').addEventListener('click', function() {
+        newContact.remove();
+      });
+    });
+
+    // Сохранение профиля
+    document.getElementById('saveProfile').addEventListener('click', function() {
+      /* ---------- grab current user from storage ---------- */
+      let user = JSON.parse(localStorage.getItem('currentUser')) || {};
+
+      /* ---------- collect values from form ---------- */
+      const fullName      = document.getElementById('editFullName').value.trim();
+      const birthDateRaw  = document.getElementById('editBirthDate').value;
+      const university    = document.getElementById('editUniversity').value.trim();
+      const courseVal     = document.getElementById('editCourse').value;
+      const specialization= document.getElementById('editSpecialization').value.trim();
+      const aboutText     = document.getElementById('editAbout').value;
+
+      /* ---------- write into DOM ---------- */
+      document.getElementById('fullName').textContent       = fullName;
+      document.getElementById('birthDate').textContent      = formatDate(birthDateRaw);
+      document.getElementById('university').textContent     = university;
+      document.getElementById('course').textContent         = courseVal;
+      document.getElementById('specialization').textContent = specialization;
+      document.getElementById('aboutText').innerHTML        = aboutText.replace(/\n/g,'<br>');
+
+      /* ---------- initials (first letters of last & first names) ---------- */
+      const nameParts = fullName.split(' ').filter(Boolean);
+      const initials  = ((nameParts[0]||'')[0]||'') + ((nameParts[1]||'')[0]||'');
+      const initialsUp= initials.toUpperCase();
+      document.getElementById('userInitials').textContent       = initialsUp;
+      document.getElementById('userInitialsLarge').textContent  = initialsUp;
+
+      /* ---------- update header name ---------- */
+      const lastName  = nameParts[0] || '';
+      const firstName = nameParts[1] || '';
+      document.getElementById('userName').textContent       = `${lastName} ${firstName}`.trim();
+      document.getElementById('userNameLarge').textContent  = `${lastName} ${firstName}`.trim();
+
+      /* ---------- contacts ---------- */
+      const contactsList = document.getElementById('contactsList');
+      contactsList.innerHTML = '';
+      user.contacts = [];
+      document.querySelectorAll('.contact-item').forEach(item=>{
+          const type  = item.querySelector('.contact-type').value;
+          const value = item.querySelector('.contact-value').value.trim();
+          if(!value) return;
+          user.contacts.push({type, value});
+          let iconClass;
+          switch(type){
+            case 'email': iconClass='fas fa-envelope'; break;
+            case 'telegram': iconClass='fab fa-telegram'; break;
+            case 'github': iconClass='fab fa-github'; break;
+            case 'vk': iconClass='fab fa-vk'; break;
+            default: iconClass='fas fa-globe';
+          }
+          const a = document.createElement('a');
+          a.className = 'px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm flex items-center';
+          a.href = '#';
+          a.innerHTML = `<i class="${iconClass} mr-1 ${type==='github'?'text-gray-800':'text-[#065B5E]'}"></i>${value}`;
+          contactsList.appendChild(a);
+      });
+
+      /* ---------- avatar ---------- */
+      const avatarInput = document.getElementById('editAvatar');
+      if(avatarInput && avatarInput.files && avatarInput.files[0]){
+          const reader = new FileReader();
+          reader.onloadend = function(){
+              user.avatar = reader.result;
+              saveAvatarForUser(user, reader.result);
+              localStorage.setItem('currentUser', JSON.stringify(user));
+              updateAvatarDisplays(user.avatar);
+          };
+          reader.readAsDataURL(avatarInput.files[0]);
+      } else {
+          /* keep previous avatar */
+          updateAvatarDisplays(user.avatar);
+      }
+
+      /* ---------- update user object ---------- */
+      user.fullName      = fullName;
+      user.birthDate     = formatDate(birthDateRaw);
+      user.university    = university;
+      user.course        = courseVal;
+      user.specialization= specialization;
+      user.about         = aboutText;
+
+      localStorage.setItem('currentUser', JSON.stringify(user));
+
+      /* ---------- sync users collection ---------- */
+      try{
+          const usersRaw = localStorage.getItem('users');
+          const users = usersRaw ? JSON.parse(usersRaw) : {};
+          const id = user.uid || user.email || user.fullName || 'unknown';
+          users[id] = user;
+          localStorage.setItem('users', JSON.stringify(users));
+      }catch(e){ console.error('Failed syncing users', e); }
+
+      /* ---------- close modal ---------- */
+      closeModal();
+    });
+
+    // Форматирование даты в DD.MM.YYYY
+    function formatDate(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}.${month}.${year}`;
+    }
+    
+    // Форматирование даты из DD.MM.YYYY в YYYY-MM-DD для input[type=date]
+    function formatDateForInput(dateString) {
+        if (dateString && dateString.includes('.')) {
+            const [day, month, year] = dateString.split('.');
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+        return dateString || '';
+    }
+  });
+</script>
+<div id="competencyModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold text-gray-800">Добавить компетенции</h3>
+        <button id="closeCompetencyModal" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div id="competencyOptions" class="space-y-3"></div>
+      <div class="mt-6 flex justify-end space-x-3">
+        <button id="cancelCompetency" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">Отмена</button>
+        <button id="saveCompetency" class="mr-6 px-4 py-2 bg-[#065B5E] text-white rounded-md hover:opacity-90">Добавить</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  /* ---------- Competency management (clean) ---------- */
+  const addBtn  = document.getElementById('addCompetencyBtn');
+  const modal   = document.getElementById('competencyModal');
+  const closeBtn= document.getElementById('closeCompetencyModal');
+  const cancelBtn=document.getElementById('cancelCompetency');
+  const saveBtn = document.getElementById('saveCompetency');
+  const optionsBox = document.getElementById('competencyOptions');
+  const tagBox     = document.getElementById('competenciesList');
+
+  const LEVELS = {
+    mastered:{bg:'bg-green-100',text:'text-green-800',icon:'✓'},
+    studied :{bg:'bg-blue-100' ,text:'text-blue-800' ,icon:'✓'},
+    learning:{bg:'bg-yellow-100',text:'text-yellow-800',icon:'⏳'},
+    plan    :{bg:'bg-gray-100' ,text:'text-gray-800' ,icon:'⏳'}
+  };
+
+  const CATS = {
+    "Программирование": ["Python","JavaScript","TypeScript","Java","Kotlin","Swift","C/C++","C#","Go","Rust"],
+    "Фронтенд & Web": ["HTML/CSS","React","Vue.js","Angular","Node.js","Express"],
+    "Бэкенд & Фреймворки": ["Django","Flask","SQL","NoSQL (MongoDB)"],
+    "DevOps & Cloud": ["Docker","Kubernetes","AWS","Azure","Google Cloud","DevOps","Git"],
+    "ML / Data": ["TensorFlow","PyTorch","Data Analysis","Machine Learning"],
+    "Офисные инструменты": ["Microsoft Word","Microsoft Excel","Microsoft PowerPoint","Microsoft Access","Outlook","OneNote","LibreOffice Writer","LibreOffice Calc"],
+    "Дизайн": ["Figma","Adobe Photoshop","Adobe Illustrator","Adobe XD","Canva"],
+    "Управление проектами": ["Jira","Confluence","Trello","Slack","Asana","Miro"]
+  };
+
+  /* helpers to access user */
+  const getUser = () => JSON.parse(localStorage.getItem('currentUser')||'{}');
+  const saveUser = (u) => {
+      localStorage.setItem('currentUser', JSON.stringify(u));
+      /* keep users collection in sync */
+      try{
+        let users = JSON.parse(localStorage.getItem('users')||'{}');
+        if(Array.isArray(users)){
+           const idx = users.findIndex(x=>x.email===u.email);
+           if(idx!==-1) users[idx]=u; else users.push(u);
+        }else{
+           const id = u.uid||u.email||u.fullName||'unknown';
+           users[id]=u;
+        }
+        localStorage.setItem('users', JSON.stringify(users));
+      }catch(e){console.error(e);}
+  };
+
+  /* UI renderers */
+  function tagEl(name, level='plan'){
+      const lv = LEVELS[level] || LEVELS.plan;
+      const div = document.createElement('div');
+      div.className = `px-3 py-1 ${lv.bg} ${lv.text} rounded-full text-sm flex items-center group`;
+      div.innerHTML = `${name}<span class="ml-1">${lv.icon}</span>`;
+      const rm = document.createElement('button');
+      rm.className = 'ml-2 text-xs opacity-0 group-hover:opacity-100 transition';
+      rm.innerHTML = '<i class="fas fa-times"></i>';
+      rm.addEventListener('click', (e)=>{
+         e.stopPropagation();
+         removeCompetency(name);
+      });
+      div.appendChild(rm);
+      return div;
+  }
+  function renderTags(){
+      tagBox.innerHTML='';
+      const u = getUser();
+      if(Array.isArray(u.competencies)){
+        u.competencies.forEach(c=>tagBox.appendChild(tagEl(c.name,c.level)));
+      }
+  }
+  function renderOptions(){
+      const u = getUser();
+      optionsBox.innerHTML='';
+      for(const [cat, list] of Object.entries(CATS)){
+         const det = document.createElement('details');
+         det.className='border border-gray-200 rounded-md mb-2';
+         const sum=document.createElement('summary');
+         sum.className='cursor-pointer select-none py-2 px-3 font-medium bg-gray-50';
+         sum.textContent = cat;
+         det.appendChild(sum);
+         const inner=document.createElement('div');
+         inner.className='space-y-2 p-3';
+         list.forEach(skill=>{
+             const row=document.createElement('div');
+             row.className='flex items-center space-x-3';
+             const has = u.competencies?.some(c=>c.name===skill);
+             row.innerHTML = `
+                <input type="checkbox" class="comp-check" data-name="${skill}" ${has?'checked':''}>
+                <span class="flex-1">${skill}</span>
+                <select class="comp-level px-2 py-1 border border-gray-300 rounded-md">
+                   <option value="mastered">Изучил хорошо</option>
+                   <option value="studied">Изучил</option>
+                   <option value="learning">В процессе обучения</option>
+                   <option value="plan">Планирую изучить</option>
+                </select>`;
+             inner.appendChild(row);
+         });
+         det.appendChild(inner);
+         optionsBox.appendChild(det);
+      }
+  }
+
+  /* mutations */
+  function removeCompetency(name){
+      const u=getUser();
+      if(!Array.isArray(u.competencies)) return;
+      u.competencies = u.competencies.filter(c=>c.name!==name);
+      saveUser(u);
+      renderTags();
+  }
+
+  function saveSelections(){
+      const u=getUser();
+      if(!Array.isArray(u.competencies)) u.competencies=[];
+      /* Map for quick lookup */
+      const map=new Map(u.competencies.map(c=>[c.name,c]));
+      optionsBox.querySelectorAll('.comp-check').forEach(chk=>{
+          const name=chk.dataset.name;
+          const level=chk.parentElement.querySelector('.comp-level').value;
+          if(chk.checked){
+             map.set(name,{name,level});
+          }else{
+             map.delete(name);
+          }
+      });
+      u.competencies = Array.from(map.values());
+      saveUser(u);
+      modal.classList.add('hidden');
+      renderTags();
+  }
+
+  /* wire */
+  addBtn?.addEventListener('click', ()=>{ renderOptions(); modal.classList.remove('hidden'); });
+  closeBtn?.addEventListener('click', ()=>modal.classList.add('hidden'));
+  cancelBtn?.addEventListener('click', ()=>modal.classList.add('hidden'));
+  saveBtn?.addEventListener('click', saveSelections);
+
+  /* initial */
+  renderTags();
+});
+</script>
+</body>
+</html>

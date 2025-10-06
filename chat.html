@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>МостВектор - Чаты</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #8BDAC3 0%, #065B5E 50%, #C198FF 100%);
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #e5e7eb #f3f4f6;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: #e5e7eb;
+            border-radius: 6px;
+        }
+        .idea-board {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)),
+                url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.2' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+        .chat-container {
+            height: calc(100vh - 200px);
+        }
+        .chat-messages {
+            height: calc(100% - 60px);
+        }
+        .chat-input-container {
+            height: 60px;
+        }
+        .message-bubble {
+            max-width: 80%;
+        }
+        .message-bubble.sent {
+            background-color: #065B5E;
+            color: white;
+            border-radius: 18px 4px 18px 18px;
+        }
+        .message-bubble.received {
+            background-color: #f3f4f6;
+            color: #1f2937;
+            border-radius: 4px 18px 18px 18px;
+        }
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: #9ca3af;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 3px;
+            animation: typing 1.4s infinite;
+        }
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+    </style>
+    <script>
+        /* ------------ Per‑user storage shim ------------ */
+        (function(){
+            const store = window.localStorage;
+            const g  = store.getItem.bind(store);
+            const s  = store.setItem.bind(store);
+            const rm = store.removeItem.bind(store);
+            
+            function persistCurrent(value){
+                try{
+                    const obj = JSON.parse(value);
+                    const id  = obj.uid || obj.email || obj.fullName || 'unknown';
+                    const users = JSON.parse(g('users') || '{}');
+                    users[id] = obj;
+                    s('users', JSON.stringify(users));
+                    s('currentUserId', id);
+                    s('currentUser', value); // keep legacy key
+                }catch(e){
+                    s('currentUser', value);
+                }
+            }
+            
+            // migrate legacy key once
+            const legacy = g('currentUser');
+            if (legacy) persistCurrent(legacy);
+            
+            // intercept writes
+            store.setItem = function(key, value){
+                if (key === 'currentUser'){
+                    persistCurrent(value);
+                    return;
+                }
+                s(key,value);
+            };
+            
+            // intercept reads
+            store.getItem = function(key){
+                if (key === 'currentUser'){
+                    const users = JSON.parse(g('users') || '{}');
+                    const id = g('currentUserId');
+                    if (id && users[id]) return JSON.stringify(users[id]);
+                    return g('currentUser'); // fallback
+                }
+                return g(key);
+            };
+            
+            // keep tidy on logout
+            store.removeItem = function(key){
+                if (key === 'currentUser'){
+                    rm('currentUserId');
+                }
+                rm(key);
+            };
+        })();
+    </script>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+    <!-- Header -->
+   <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <img src="/Логотип МостВектор.png" class="w-10 h-10">
+                    <span class="text-xl font-bold text-[#065B5E] hidden md:block">МостВектор</span>
+                </a>
+                
+                <nav class="hidden lg:flex space-x-1">
+                    <div class="relative group">
+                        <button class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium flex items-center space-x-1">
+                            <span>Проекты</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div class="absolute left-0 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block top-full">
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Все проекты</a>
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Создать проект</a>
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Популярные проекты</a>
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Формирование команд</a>
+                        </div>
+                    </div>
+                    <a href="forum.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Форум</a>
+                    <a href="ideas.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Идеи</a>
+                    <a href="rating.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Рейтинг</a>
+                    <a href="chats.html" class="px-4 py-2 text-[#065B5E] font-medium border-b-2 border-[#065B5E]">Чаты</a>
+                </nav>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="relative hidden md:block">
+                    <input type="text" placeholder="Поиск..." class="pl-10 pr-4 py-2 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+                </div>
+                
+                <div class="relative">
+                    <button class="p-2 text-[#444] hover:text-gray-900 relative">
+                        <i class="far fa-bell text-xl"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full top-0.5"></span>
+                    </button>
+                </div>
+                
+                <div id="authContainer">
+                    <a id="authButton" href="login.html" class="px-4 py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">Войти</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu button -->
+        <div class="lg:hidden flex justify-between items-center px-4 py-2">
+            <button id="mobileMenuButton" class="text-[#444] hover:text-gray-900">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <div class="relative w-full max-w-xs mx-2">
+                <input type="text" placeholder="Поиск..." class="pl-8 pr-4 py-1 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent w-full">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobileMenu" class="hidden lg:hidden bg-white border-t border-gray-200 px-4 py-2">
+            <div class="flex flex-col space-y-1">
+                <div class="group">
+                    <button class="w-full flex justify-between items-center px-2 py-2 text-[#444] hover:text-gray-900">
+                        <span>Проекты</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    <div class="hidden group-focus-within:block pl-4">
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Все проекты</a>
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Создать проект</a>
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Популярные проекты</a>
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Формирование команд</a>
+                    </div>
+                </div>
+                <a href="projects.html" class="px-2 py-2 text-[#444] hover:text-gray-900">Форум</a>
+                <a href="projects.html" class="px-2 py-2 text-[#444] hover:text-gray-900">Идеи</a>
+                <a href="projects.html" class="px-2 py-2 text-[#444] hover:text-gray-900">Рейтинг</a>
+                <a href="chats.html" class="px-2 py-2 text-[#065B5E] font-medium">Чаты</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        <div class="flex items-center mb-6">
+            <h1 class="text-2xl md:text-3xl font-bold text-[#065B5E]">Личные сообщения</h1>
+            <button class="ml-4 px-4 py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition flex items-center">
+                <i class="fas fa-plus mr-2"></i> Новый чат
+            </button>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-4">
+                <!-- Chat sidebar -->
+                <div class="lg:col-span-1 border-r border-gray-200">
+                    <div class="p-4 border-b border-gray-200">
+                        <div class="relative">
+                            <input type="text" placeholder="Поиск чатов..." class="pl-10 pr-4 py-2 w-full border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="sidebar overflow-y-auto max-h-[calc(100vh-200px)]">
+                        <!-- Chat list -->
+                        <div class="space-y-1 p-2">
+                            <!-- Chat item 1 -->
+                            <div class="p-3 rounded-lg bg-[#8BDAC3]/20 cursor-pointer hover:bg-[#8BDAC3]/30 transition">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center text-white mr-3">
+                                        <span>ИП</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="font-semibold text-[#065B5E] truncate">Иван Петров</h3>
+                                            <span class="text-xs text-gray-500">12:45</span>
+                                        </div>
+                                        <div class="flex items-center mt-1">
+                                            <p class="text-sm text-gray-600 truncate">Привет! Как продвигается проект?</p>
+                                            <span class="ml-2 w-5 h-5 bg-[#065B5E] text-white text-xs rounded-full flex items-center justify-center">3</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Chat item 2 -->
+                            <div class="p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white mr-3">
+                                        <span>АС</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="font-semibold text-gray-800 truncate">Анна Смирнова</h3>
+                                            <span class="text-xs text-gray-500">Вчера</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 truncate mt-1">Отправила тебе файлы для проверки</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Chat item 3 -->
+                            <div class="p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center text-white mr-3">
+                                        <span>ДИ</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="font-semibold text-gray-800 truncate">Дмитрий Иванов</h3>
+                                            <span class="text-xs text-gray-500">Пн</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 truncate mt-1">Спасибо за помощь с кодом!</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Chat item 4 -->
+                            <div class="p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-yellow-500 to-yellow-600 flex items-center justify-center text-white mr-3">
+                                        <span>МК</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="font-semibold text-gray-800 truncate">Мария Кузнецова</h3>
+                                            <span class="text-xs text-gray-500">Сб</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 truncate mt-1">Когда сможем обсудить дизайн?</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Chat item 5 -->
+                            <div class="p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center text-white mr-3">
+                                        <span>АВ</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="font-semibold text-gray-800 truncate">Алексей Волков</h3>
+                                            <span class="text-xs text-gray-500">Пт</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 truncate mt-1">Готов к встрече в любое время</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Chat item 6 -->
+                            <div class="p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-600 flex items-center justify-center text-white mr-3">
+                                        <span>ЕП</span>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="font-semibold text-gray-800 truncate">Елена Петрова</h3>
+                                            <span class="text-xs text-gray-500">Чт</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 truncate mt-1">Отличные новости по проекту!</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat main area -->
+                <div class="lg:col-span-3">
+                    <div class="flex flex-col h-full">
+                        <!-- Chat header -->
+                        <div class="p-4 border-b border-gray-200 flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center text-white mr-3">
+                                <span>ИП</span>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-[#065B5E]">Иван Петров</h3>
+                                <div class="flex items-center text-xs text-gray-500">
+                                    <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                                    <span>онлайн</span>
+                                </div>
+                            </div>
+                            <div class="ml-auto flex space-x-2">
+                                <button class="p-2 text-gray-500 hover:text-[#065B5E]">
+                                    <i class="fas fa-phone"></i>
+                                </button>
+                                <button class="p-2 text-gray-500 hover:text-[#065B5E]">
+                                    <i class="fas fa-video"></i>
+                                </button>
+                                <button class="p-2 text-gray-500 hover:text-[#065B5E]">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat messages -->
+                        <div class="chat-messages overflow-y-auto p-4 bg-gray-50">
+                            <div class="space-y-4">
+                                <!-- Date separator -->
+                                <div class="flex justify-center">
+                                    <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">Сегодня</span>
+                                </div>
+                                
+                                <!-- Received message -->
+                                <div class="flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center text-white mr-3">
+                                        <span>ИП</span>
+                                    </div>
+                                    <div class="message-bubble received px-4 py-3">
+                                        <p>Привет! Как продвигается работа над проектом? Удалось ли решить проблему с API?</p>
+                                        <span class="text-xs text-gray-500 mt-1 block">12:45</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Sent message -->
+                                <div class="flex justify-end">
+                                    <div class="message-bubble sent px-4 py-3">
+                                        <p>Привет! Да, проблема решена. Я нашел решение в документации и уже внедрил исправление.</p>
+                                        <span class="text-xs text-gray-200 mt-1 block">12:48</span>
+                                    </div>
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-[#8BDAC3] to-[#065B5E] flex items-center justify-center text-white ml-3">
+                                        <span>Я</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Received message -->
+                                <div class="flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center text-white mr-3">
+                                        <span>ИП</span>
+                                    </div>
+                                    <div class="message-bubble received px-4 py-3">
+                                        <p>Отлично! Можешь поделиться решением? У меня похожая проблема в другом проекте.</p>
+                                        <span class="text-xs text-gray-500 mt-1 block">12:50</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Sent message with attachment -->
+                                <div class="flex justify-end">
+                                    <div class="message-bubble sent px-4 py-3">
+                                        <p>Конечно! Я прикрепил файл с решением и ссылку на документацию.</p>
+                                        <div class="mt-2 bg-[#8BDAC3]/20 rounded-lg p-3">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-[#065B5E]/10 rounded-lg flex items-center justify-center text-[#065B5E] mr-3">
+                                                    <i class="fas fa-file-code"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-sm">api_fix.js</p>
+                                                    <p class="text-xs text-gray-500">128 KB</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <a href="#" class="text-blue-400 hover:underline text-sm">https://docs.api.com/fix#section-5.2</a>
+                                        </div>
+                                        <span class="text-xs text-gray-200 mt-1 block">12:52</span>
+                                    </div>
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-[#8BDAC3] to-[#065B5E] flex items-center justify-center text-white ml-3">
+                                        <span>Я</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Received message -->
+                                <div class="flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center text-white mr-3">
+                                        <span>ИП</span>
+                                    </div>
+                                    <div class="message-bubble received px-4 py-3">
+                                        <p>Спасибо большое! Это очень помогло. Когда сможешь посмотреть мою часть кода?</p>
+                                        <span class="text-xs text-gray-500 mt-1 block">12:55</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Sent message -->
+                                <div class="flex justify-end">
+                                    <div class="message-bubble sent px-4 py-3">
+                                        <p>Могу сегодня после 18:00. У тебя есть конкретные вопросы или нужно провести ревью всего кода?</p>
+                                        <span class="text-xs text-gray-200 mt-1 block">12:57</span>
+                                    </div>
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-[#8BDAC3] to-[#065B5E] flex items-center justify-center text-white ml-3">
+                                        <span>Я</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Received message -->
+                                <div class="flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center text-white mr-3">
+                                        <span>ИП</span>
+                                    </div>
+                                    <div class="message-bubble received px-4 py-3">
+                                        <p>Хотел бы обсудить архитектуру модуля. Кажется, можно оптимизировать несколько компонентов.</p>
+                                        <span class="text-xs text-gray-500 mt-1 block">13:00</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Typing indicator -->
+                                <div class="flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center text-white mr-3">
+                                        <span>ИП</span>
+                                    </div>
+                                    <div class="typing-indicator bg-gray-200 px-4 py-3 rounded-full">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat input -->
+                        <div class="chat-input-container border-t border-gray-200 p-4">
+                            <div class="flex items-center">
+                                <button class="p-2 text-gray-500 hover:text-[#065B5E] mr-2">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                                <button class="p-2 text-gray-500 hover:text-[#065B5E] mr-2">
+                                    <i class="fas fa-image"></i>
+                                </button>
+                                <div class="flex-1">
+                                    <input type="text" placeholder="Напишите сообщение..." class="w-full px-4 py-2 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent">
+                                </div>
+                                <button class="ml-2 p-2 w-10 h-10 bg-[#065B5E] text-white rounded-full hover:bg-[#C198FF] transition flex items-center justify-center">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">МостВектор</h3>
+                    <p class="text-gray-400 text-sm">Платформа для формирования междисциплинарных и межвузовских проектных команд.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Навигация</h3>
+                    <ul class="space-y-2">
+                        <li><a href="index.html" class="text-gray-400 hover:text-white text-sm">Главная</a></li>
+                        <li><a href="projects.html" class="text-gray-400 hover:text-white text-sm">Проекты</a></li>
+                        <li><a href="projects.html" class="text-gray-400 hover:text-white text-sm">Форум</a></li>
+                        <li><a href="projects.html" class="text-gray-400 hover:text-white text-sm">Идеи</a></li>
+                        <li><a href="projects.html" class="text-gray-400 hover:text-white text-sm">Рейтинг</a></li>
+                        <li><a href="chats.html" class="text-gray-400 hover:text-white text-sm">Чаты</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Контакты</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-envelope mr-2"></i> contact@mostvector.ru</li>
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-phone mr-2"></i> +7 (123) 456-78-90</li>
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-map-marker-alt mr-2"></i> Москва, ул. Студенческая, 1</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Подписаться</h3>
+                    <p class="text-gray-400 text-sm mb-4">Будьте в курсе новых проектов и возможностей.</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Ваш email" class="px-3 py-2 bg-gray-700 text-white rounded-l-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] w-full">
+                        <button class="px-4 py-2 bg-[#065B5E] text-white rounded-r-md hover:bg-[#C198FF] transition">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="flex space-x-4 mt-4">
+                        <a href="projects.html" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-vk"></i></a>
+                        <a href="projects.html" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-telegram"></i></a>
+                        <a href="projects.html" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm mb-4 md:mb-0">© 2025 МостВектор. Все права защищены.</p>
+                <div class="flex space-x-4">
+                    <a href="projects.html" class="text-gray-400 hover:text-white text-sm">Пользовательское соглашение</a>
+                    <a href="projects.html" class="text-gray-400 hover:text-white text-sm">Политика конфиденциальности</a>
+                    <a href="projects.html" class="text-gray-400 hover:text-white text-sm">FAQ</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const authButton = document.getElementById('authButton');
+            const userData = localStorage.getItem('currentUser');
+            
+            if (authButton) {
+                try {
+                    const currentUser = JSON.parse(userData);
+                    if (currentUser) {
+                        authButton.textContent = 'Личный кабинет';
+                        authButton.setAttribute('href', 'profile.html');
+                    } else {
+                        authButton.textContent = 'Войти';
+                        authButton.setAttribute('href', 'login.html');
+                    }
+                } catch (e) {
+                    console.error('Ошибка чтения currentUser:', e);
+                    authButton.textContent = 'Войти';
+                    authButton.setAttribute('href', 'login.html');
+                }
+            }
+            
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobileMenuButton');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            
+            // Chat functionality
+            const chatMessages = document.querySelector('.chat-messages');
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>

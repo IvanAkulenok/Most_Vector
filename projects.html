@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проекты | МостВектор - Межвузовские проектные команды</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #8BDAC3 0%, #065B5E 50%, #C198FF 100%);
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #e5e7eb #f3f4f6;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: #e5e7eb;
+            border-radius: 6px;
+        }
+        .idea-board {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)),
+                url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.2' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+        }
+        .status-recruiting {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .status-in-progress {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .status-completed {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .tag-item {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tag-item:hover {
+            transform: scale(1.05);
+        }
+        .tag-item.active {
+            background-color: #065B5E;
+            color: white;
+        }
+        .filter-section {
+            transition: all 0.3s ease;
+        }
+        .filter-section.collapsed {
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+        }
+        .filter-section.expanded {
+            max-height: 1000px;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+    <!-- Header -->
+      <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <img src="/Логотип МостВектор.png" class="w-10 h-10">
+                    <span class="text-xl font-bold text-[#065B5E] hidden md:block">МостВектор</span>
+                </a>
+                
+                <nav class="hidden lg:flex space-x-1">
+                    <div class="relative group">
+                        <button class="px-4 py-2 text-gray-900 font-medium flex items-center space-x-1">
+                            <span>Проекты</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div class="absolute left-0 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block top-full">
+                            <a href="#" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20 font-medium">
+                                <i class="fas fa-check mr-2 text-[#065B5E]"></i> Все проекты
+                            </a>
+                            <a href="#" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Создать проект</a>
+                            <a href="#" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Популярные проекты</a>
+                            <a href="#" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Формирование команд</a>
+                        </div>
+                    </div>
+                    <a href="forum.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Форум</a>
+                    <a href="ideas.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Идеи</a>
+                    <a href="rating.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Рейтинг</a>
+                    <a href="chat.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Чаты</a>
+                </nav>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="relative hidden md:block">
+                    <input type="text" placeholder="Поиск..." class="pl-10 pr-4 py-2 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+                </div>
+                
+                <div class="relative">
+                    <button class="p-2 text-[#444] hover:text-gray-900 relative">
+                        <i class="far fa-bell text-xl"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full top-0.5"></span>
+                    </button>
+                </div>
+                
+                <div id="authContainer">
+                    <a id="authButton" href="login.html" class="px-4 py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">Войти</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu button -->
+        <div class="lg:hidden flex justify-between items-center px-4 py-2">
+            <button id="mobileMenuButton" class="text-[#444] hover:text-gray-900">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <div class="relative w-full max-w-xs mx-2">
+                <input type="text" placeholder="Поиск..." class="pl-8 pr-4 py-1 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent w-full">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobileMenu" class="hidden lg:hidden bg-white border-t border-gray-200 px-4 py-2">
+            <div class="flex flex-col space-y-1">
+                <div class="group">
+                    <button class="w-full flex justify-between items-center px-2 py-2 text-gray-900 font-medium">
+                        <span>Проекты</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    <div class="pl-4">
+                        <a href="#" class="block px-2 py-1 text-[#444] hover:text-gray-900 font-medium">
+                            <i class="fas fa-check mr-2 text-[#065B5E]"></i> Все проекты
+                        </a>
+                        <a href="#" class="block px-2 py-1 text-[#444] hover:text-gray-900">Создать проект</a>
+                        <a href="#" class="block px-2 py-1 text-[#444] hover:text-gray-900">Популярные проекты</a>
+                        <a href="#" class="block px-2 py-1 text-[#444] hover:text-gray-900">Формирование команд</a>
+                    </div>
+                </div>
+                <a href="#" class="px-2 py-2 text-[#444] hover:text-gray-900">Форум</a>
+                <a href="#" class="px-2 py-2 text-[#444] hover:text-gray-900">Идеи</a>
+                <a href="#" class="px-2 py-2 text-[#444] hover:text-gray-900">Рейтинг</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Page Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-[#065B5E] mb-2">Проекты</h1>
+                <p class="text-[#444]">Найдите интересные проекты или создайте свой собственный</p>
+            </div>
+            <button id="createProjectBtn" class="mt-4 md:mt-0 px-6 py-3 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition flex items-center">
+                <i class="fas fa-plus mr-2"></i> Создать проект
+            </button>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-8">
+            <div class="flex justify-between items-center cursor-pointer" id="filterToggle">
+                <h2 class="text-lg font-semibold text-[#065B5E]">Фильтры и сортировка</h2>
+                <i class="fas fa-chevron-down text-[#065B5E]"></i>
+            </div>
+            
+            <div class="filter-section expanded mt-4" id="filterContent">
+                <!-- Status Filter -->
+                <div class="mb-6">
+                    <h3 class="text-md font-medium text-[#065B5E] mb-3">Статус проекта</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <button class="status-badge status-recruiting px-4 py-2">Набор участников</button>
+                        <button class="status-badge status-in-progress px-4 py-2">В процессе</button>
+                        <button class="status-badge status-completed px-4 py-2">Завершен</button>
+                    </div>
+                </div>
+                
+                <!-- Tags Filter -->
+                <div class="mb-6">
+                    <h3 class="text-md font-medium text-[#065B5E] mb-3">Теги</h3>
+                    <div class="tag-cloud">
+                        <span class="tag-item bg-[#8BDAC3]/20 text-[#065B5E] active">Все</span>
+                        <span class="tag-item bg-[#8BDAC3]/20 text-[#065B5E]">IT</span>
+                        <span class="tag-item bg-[#8BDAC3]/20 text-[#065B5E]">Образование</span>
+                        <span class="tag-item bg-[#8BDAC3]/20 text-[#065B5E]">Экология</span>
+                        <span class="tag-item bg-[#8BDAC3]/20 text-[#065B5E]">Наука</span>
+                        <span class="tag-item bg-[#8BDAC3]/20 text-[#065B5E]">Социальный проект</span>
+                        <span class="tag-item bg-[#8BDAC3]/20 text-[#065B5E]">Медицина</span>
+                        <span class="tag-item bg-[#8BDAC3]/20 text-[#065B5E]">Дизайн</span>
+                    </div>
+                </div>
+                
+                <!-- Advanced Filters -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <!-- University Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ВУЗ</label>
+                        <select class="w-full px-3 py-2 border border-[#8BDAC3] rounded-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3]">
+                            <option>Все ВУЗы</option>
+                            <option>МГУ</option>
+                            <option>СПбГУ</option>
+                            <option>НГУ</option>
+                            <option>МФТИ</option>
+                            <option>ВШЭ</option>
+                        </select>
+                    </div>
+                    
+                    <!-- City Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Город</label>
+                        <input type="text" placeholder="Введите город" class="w-full px-3 py-2 border border-[#8BDAC3] rounded-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3]">
+                    </div>
+                    
+                    <!-- Competencies Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Компетенции</label>
+                        <input type="text" placeholder="Введите компетенции" class="w-full px-3 py-2 border border-[#8BDAC3] rounded-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3]">
+                    </div>
+                    
+                    <!-- Sort By -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Сортировать по</label>
+                        <select class="w-full px-3 py-2 border border-[#8BDAC3] rounded-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3]">
+                            <option>Дате создания (новые)</option>
+                            <option>Популярности</option>
+                            <option>Рейтингу проекта</option>
+                            <option>Количеству участников</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button class="px-4 py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition mr-2">Применить</button>
+                    <button class="px-4 py-2 border border-[#065B5E] text-[#065B5E] rounded-md hover:bg-gray-100 transition">Сбросить</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects Grid -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            <!-- Project Card 1 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden project-card transition duration-300">
+                <div class="h-40 bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center relative">
+                    <i class="fas fa-robot text-white text-5xl"></i>
+                    <div class="absolute top-4 right-4 top-full">
+                        <span class="status-badge status-recruiting">Набор участников</span>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-semibold text-[#065B5E]">Разработка образовательного чат-бота</h3>
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">IT</span>
+                    </div>
+                    <p class="text-[#444] text-sm mb-4">Создание AI-ассистента для помощи студентам в изучении программирования.</p>
+                    <div class="flex justify-between items-center text-sm mb-4">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-university mr-1"></i>
+                            <span>МГУ, СПбГУ</span>
+                        </div>
+                        <div class="text-gray-500">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            <span>Москва</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-users mr-1"></i>
+                            <span>3/5 участников</span>
+                        </div>
+                        <div class="text-[#065B5E] font-medium">
+                            4.7 <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 pb-4">
+                    <button class="w-full py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                        Подробнее
+                    </button>
+                </div>
+            </div>
+
+            <!-- Project Card 2 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden project-card transition duration-300">
+                <div class="h-40 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center relative">
+                    <i class="fas fa-leaf text-white text-5xl"></i>
+                    <div class="absolute top-4 right-4 top-full">
+                        <span class="status-badge status-in-progress">В процессе</span>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-semibold text-[#065B5E]">Экологический мониторинг города</h3>
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Экология</span>
+                    </div>
+                    <p class="text-[#444] text-sm mb-4">Разработка системы мониторинга качества воздуха с открытыми данными.</p>
+                    <div class="flex justify-between items-center text-sm mb-4">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-university mr-1"></i>
+                            <span>НГУ, ТГУ</span>
+                        </div>
+                        <div class="text-gray-500">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            <span>Новосибирск</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-users mr-1"></i>
+                            <span>5/8 участников</span>
+                        </div>
+                        <div class="text-[#065B5E] font-medium">
+                            4.5 <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 pb-4">
+                    <button class="w-full py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                        Подробнее
+                    </button>
+                </div>
+            </div>
+
+            <!-- Project Card 3 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden project-card transition duration-300">
+                <div class="h-40 bg-gradient-to-r from-yellow-500 to-yellow-600 flex items-center justify-center relative">
+                    <i class="fas fa-microscope text-white text-5xl"></i>
+                    <div class="absolute top-4 right-4 top-full">
+                        <span class="status-badge status-recruiting">Набор участников</span>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-semibold text-[#065B5E]">Исследование новых материалов</h3>
+                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Наука</span>
+                    </div>
+                    <p class="text-[#444] text-sm mb-4">Междисциплинарное исследование композитных материалов для медицины.</p>
+                    <div class="flex justify-between items-center text-sm mb-4">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-university mr-1"></i>
+                            <span>МФТИ, МГУ</span>
+                        </div>
+                        <div class="text-gray-500">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            <span>Москва</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-users mr-1"></i>
+                            <span>2/4 участников</span>
+                        </div>
+                        <div class="text-[#065B5E] font-medium">
+                            4.8 <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 pb-4">
+                    <button class="w-full py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                        Подробнее
+                    </button>
+                </div>
+            </div>
+
+            <!-- Project Card 4 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden project-card transition duration-300">
+                <div class="h-40 bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center relative">
+                    <i class="fas fa-mobile-alt text-white text-5xl"></i>
+                    <div class="absolute top-4 right-4 top-full">
+                        <span class="status-badge status-in-progress">В процессе</span>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-semibold text-[#065B5E]">Мобильное приложение для волонтеров</h3>
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Социальный проект</span>
+                    </div>
+                    <p class="text-[#444] text-sm mb-4">Платформа для координации волонтерской деятельности студентов с возможностью учета часов.</p>
+                    <div class="flex justify-between items-center text-sm mb-4">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-university mr-1"></i>
+                            <span>ВШЭ, РУДН</span>
+                        </div>
+                        <div class="text-gray-500">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            <span>Москва</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-users mr-1"></i>
+                            <span>6/8 участников</span>
+                        </div>
+                        <div class="text-[#065B5E] font-medium">
+                            4.6 <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 pb-4">
+                    <button class="w-full py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                        Подробнее
+                    </button>
+                </div>
+            </div>
+
+            <!-- Project Card 5 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden project-card transition duration-300">
+                <div class="h-40 bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center relative">
+                    <i class="fas fa-heartbeat text-white text-5xl"></i>
+                    <div class="absolute top-4 right-4 top-full">
+                        <span class="status-badge status-completed">Завершен</span>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-semibold text-[#065B5E]">Телемедицинская платформа</h3>
+                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Медицина</span>
+                    </div>
+                    <p class="text-[#444] text-sm mb-4">Разработка системы для удаленных консультаций с врачами университетских клиник.</p>
+                    <div class="flex justify-between items-center text-sm mb-4">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-university mr-1"></i>
+                            <span>СПбГУ, МГМУ</span>
+                        </div>
+                        <div class="text-gray-500">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            <span>Санкт-Петербург</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-users mr-1"></i>
+                            <span>7/7 участников</span>
+                        </div>
+                        <div class="text-[#065B5E] font-medium">
+                            4.9 <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 pb-4">
+                    <button class="w-full py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                        Подробнее
+                    </button>
+                </div>
+            </div>
+
+            <!-- Project Card 6 -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden project-card transition duration-300">
+                <div class="h-40 bg-gradient-to-r from-indigo-500 to-indigo-600 flex items-center justify-center relative">
+                    <i class="fas fa-palette text-white text-5xl"></i>
+                    <div class="absolute top-4 right-4 top-full">
+                        <span class="status-badge status-recruiting">Набор участников</span>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="text-lg font-semibold text-[#065B5E]">Цифровая галерея студенческого искусства</h3>
+                        <span class="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full">Дизайн</span>
+                    </div>
+                    <p class="text-[#444] text-sm mb-4">Создание онлайн-платформы для демонстрации работ студентов художественных специальностей.</p>
+                    <div class="flex justify-between items-center text-sm mb-4">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-university mr-1"></i>
+                            <span>СПбГАИЖСА, МГХПА</span>
+                        </div>
+                        <div class="text-gray-500">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            <span>Москва</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-users mr-1"></i>
+                            <span>2/5 участников</span>
+                        </div>
+                        <div class="text-[#065B5E] font-medium">
+                            4.3 <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 pb-4">
+                    <button class="w-full py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                        Подробнее
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex justify-center mt-8">
+            <nav class="inline-flex rounded-md shadow">
+                <a href="#" class="py-2 px-4 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-l-md">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <a href="#" class="py-2 px-4 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">1</a>
+                <a href="#" class="py-2 px-4 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600 hover:bg-blue-100">2</a>
+                <a href="#" class="py-2 px-4 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">3</a>
+                <a href="#" class="py-2 px-4 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">4</a>
+                <a href="#" class="py-2 px-4 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-r-md">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </nav>
+        </div>
+    <div id="projectList" class="grid md:grid-cols-2 gap-4 mt-6"></div>
+</main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">МостВектор</h3>
+                    <p class="text-gray-400 text-sm">Платформа для формирования междисциплинарных и межвузовских проектных команд.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Навигация</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white text-sm">Главная</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white text-sm">Проекты</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white text-sm">Форум</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white text-sm">Идеи</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white text-sm">Рейтинг</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Контакты</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-envelope mr-2"></i> contact@mostvector.ru</li>
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-phone mr-2"></i> +7 (123) 456-78-90</li>
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-map-marker-alt mr-2"></i> Москва, ул. Студенческая, 1</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Подписаться</h3>
+                    <p class="text-gray-400 text-sm mb-4">Будьте в курсе новых проектов и возможностей.</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Ваш email" class="px-3 py-2 bg-gray-700 text-white rounded-l-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] w-full">
+                        <button class="px-4 py-2 bg-[#065B5E] text-white rounded-r-md hover:bg-[#C198FF] transition">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="flex space-x-4 mt-4">
+                        <a href="#" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-vk"></i></a>
+                        <a href="#" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-telegram"></i></a>
+                        <a href="#" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm mb-4 md:mb-0">© 2025 МостВектор. Все права защищены.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white text-sm">Пользовательское соглашение</a>
+                    <a href="#" class="text-gray-400 hover:text-white text-sm">Политика конфиденциальности</a>
+                    <a href="#" class="text-gray-400 hover:text-white text-sm">FAQ</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const authButton = document.getElementById('authButton');
+            const userData = localStorage.getItem('currentUser');
+            
+            if (authButton) {
+                try {
+                    const currentUser = JSON.parse(userData);
+                    if (currentUser) {
+                        authButton.textContent = 'Личный кабинет';
+                        authButton.setAttribute('href', 'profile.html');
+                    } else {
+                        authButton.textContent = 'Войти';
+                        authButton.setAttribute('href', 'login.html');
+                    }
+                } catch (e) {
+                    console.error('Ошибка чтения currentUser:', e);
+                    authButton.textContent = 'Войти';
+                    authButton.setAttribute('href', 'login.html');
+                }
+            }
+            
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobileMenuButton');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            
+            // Filter toggle functionality
+            const filterToggle = document.getElementById('filterToggle');
+            const filterContent = document.getElementById('filterContent');
+            
+            if (filterToggle && filterContent) {
+                filterToggle.addEventListener('click', function() {
+                    filterContent.classList.toggle('expanded');
+                    filterContent.classList.toggle('collapsed');
+                    
+                    const icon = filterToggle.querySelector('i');
+                    if (icon) {
+                        if (filterContent.classList.contains('expanded')) {
+                            icon.classList.remove('fa-chevron-up');
+                            icon.classList.add('fa-chevron-down');
+                        } else {
+                            icon.classList.remove('fa-chevron-down');
+                            icon.classList.add('fa-chevron-up');
+                        }
+                    }
+                });
+            }
+            
+            // Tag selection functionality
+            const tagItems = document.querySelectorAll('.tag-item');
+            tagItems.forEach(tag => {
+                tag.addEventListener('click', function() {
+                    if (this.textContent === 'Все') {
+                        tagItems.forEach(t => t.classList.remove('active'));
+                        this.classList.add('active');
+                    } else {
+                        document.querySelector('.tag-item:first-child').classList.remove('active');
+                        this.classList.toggle('active');
+                    }
+                });
+            });
+            
+            // Status filter functionality
+            const statusButtons = document.querySelectorAll('.status-badge');
+            statusButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    this.classList.toggle('bg-opacity-30');
+                });
+            });
+        });
+    </script>
+<!-- Create Project Modal -->
+<div id="projectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold text-gray-800">Создать проект</h3>
+        <button id="closeProjectModal" class="text-gray-500 hover:text-gray-700">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Название проекта</label>
+          <input type="text" id="projTitle" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Тема</label>
+          <input type="text" id="projTheme" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Краткое описание</label>
+          <textarea id="projDescr" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Дата начала</label>
+            <input type="date" id="projStart" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Дата завершения</label>
+            <input type="date" id="projEnd" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end space-x-3">
+        <button id="cancelProject" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">Отмена</button>
+        <button id="saveProject" class="mr-6 px-4 py-2 bg-[#065B5E] text-white rounded-md hover:opacity-90">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const modal = document.getElementById('projectModal');
+  const openBtn = document.getElementById('createProjectBtn');
+  const closeBtn = document.getElementById('closeProjectModal');
+  const cancelBtn = document.getElementById('cancelProject');
+  const saveBtn = document.getElementById('saveProject');
+
+  function openModal(){ modal.classList.remove('hidden'); }
+  function closeModal(){ modal.classList.add('hidden'); }
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+
+  const params = new URLSearchParams(window.location.search);
+  if(params.has('create')) openModal();
+
+  saveBtn?.addEventListener('click', function(){
+      const title = document.getElementById('projTitle').value.trim();
+      if(!title){ alert('Введите название проекта'); return; }
+      const project = {
+        id: Date.now(),
+        title,
+        theme: document.getElementById('projTheme').value.trim(),
+        description: document.getElementById('projDescr').value.trim(),
+        start: document.getElementById('projStart').value,
+        end: document.getElementById('projEnd').value,
+        status: 'recruiting',
+        owner: JSON.parse(localStorage.getItem('currentUser')||'{}').fullName||''
+      };
+      const list = JSON.parse(localStorage.getItem('projects')||'[]');
+      list.push(project);
+      localStorage.setItem('projects', JSON.stringify(list));
+      window.location.href = 'projects.html?tab=my';
+  });
+
+  function render(){
+      const list = JSON.parse(localStorage.getItem('projects')||'[]');
+      const container = document.querySelector('#projectList');
+      if(!container) return;
+      container.innerHTML='';
+      list.forEach(p=>{
+         const card = document.createElement('div');
+         card.className = 'border border-gray-200 rounded-lg p-4 project-card transition bg-white';
+         card.innerHTML = `
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="font-medium text-gray-800">${p.title}</h3>
+              <span class="status-badge status-recruiting">Набор участников</span>
+            </div>
+            <p class="text-sm text-gray-600 mb-3">${p.description||''}</p>
+            <div class="flex items-center justify-between text-xs text-gray-500">
+              <span><i class="far fa-clock mr-1"></i> ${p.start||''}</span>
+              <span><i class="fas fa-user mr-1"></i> ${p.owner||''}</span>
+            </div>
+         `;
+         container.appendChild(card);
+      });
+  }
+  render();
+});
+</script>
+</body>
+</html>

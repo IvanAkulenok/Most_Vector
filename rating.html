@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рейтинг участников | МостВектор</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #8BDAC3 0%, #065B5E 50%, #C198FF 100%);
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #e5e7eb #f3f4f6;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: #e5e7eb;
+            border-radius: 6px;
+        }
+        .idea-board {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)),
+                url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.2' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+        .rating-header {
+            background: linear-gradient(135deg, #065B5E 0%, #8BDAC3 100%);
+        }
+        .rank-badge {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+        }
+        .rank-1 {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #7a6500;
+        }
+        .rank-2 {
+            background: linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 100%);
+            color: #4a4a4a;
+        }
+        .rank-3 {
+            background: linear-gradient(135deg, #CD7F32 0%, #A0522D 100%);
+            color: #5a3a1e;
+        }
+        .rating-chart {
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+        }
+        .rating-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #8BDAC3, #065B5E);
+        }
+        .rating-star {
+            color: #FFD700;
+        }
+        .rating-star-empty {
+            color: #e5e7eb;
+        }
+        .tab-active {
+            border-bottom: 3px solid #C198FF;
+            color: #065B5E;
+            font-weight: 600;
+        }
+        .filter-card {
+            transition: all 0.3s ease;
+        }
+        .filter-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .participant-card {
+            transition: all 0.3s ease;
+        }
+        .participant-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <img src="/Логотип МостВектор.png" class="w-10 h-10">
+                    <span class="text-xl font-bold text-[#065B5E] hidden md:block">МостВектор</span>
+                </a>
+                
+                
+                <nav class="hidden lg:flex space-x-1">
+                    <div class="relative group">
+                        <button class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium flex items-center space-x-1">
+                            <span>Проекты</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div class="absolute left-0 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block top-full">
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Все проекты</a>
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Создать проект</a>
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Популярные проекты</a>
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Формирование команд</a>
+                        </div>
+                    </div>
+                    <a href="forum.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Форум</a>
+                    <a href="ideas.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Идеи</a>
+                    <a href="rating.html" class="px-4 py-2 text-[#065B5E] hover:text-gray-900 font-medium border-b-2 border-[#065B5E]">Рейтинг</a>
+                    <a href="chat.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Чаты</a>
+                </nav>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="relative hidden md:block">
+                    <input type="text" placeholder="Поиск..." class="pl-10 pr-4 py-2 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+                </div>
+                
+                <div class="relative">
+                    <button class="p-2 text-[#444] hover:text-gray-900 relative">
+                        <i class="far fa-bell text-xl"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full top-0.5"></span>
+                    </button>
+                </div>
+                
+                <div id="authContainer">
+                    <a id="authButton" href="login.html" class="px-4 py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">Войти</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu button -->
+        <div class="lg:hidden flex justify-between items-center px-4 py-2">
+            <button id="mobileMenuButton" class="text-[#444] hover:text-gray-900">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <div class="relative w-full max-w-xs mx-2">
+                <input type="text" placeholder="Поиск..." class="pl-8 pr-4 py-1 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent w-full">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobileMenu" class="hidden lg:hidden bg-white border-t border-gray-200 px-4 py-2">
+            <div class="flex flex-col space-y-1">
+                <div class="group">
+                    <button class="w-full flex justify-between items-center px-2 py-2 text-[#444] hover:text-gray-900">
+                        <span>Проекты</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    <div class="hidden group-focus-within:block pl-4">
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Все проекты</a>
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Создать проект</a>
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Популярные проекты</a>
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Формирование команд</a>
+                    </div>
+                </div>
+                <a href="projects.html" class="px-2 py-2 text-[#444] hover:text-gray-900">Форум</a>
+                <a href="projects.html" class="px-2 py-2 text-[#444] hover:text-gray-900">Идеи</a>
+                <a href="rating.html" class="px-2 py-2 text-[#065B5E] font-medium">Рейтинг</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Rating Header -->
+        <section class="rating-header text-white rounded-xl p-8 mb-8">
+            <div class="max-w-4xl mx-auto text-center">
+                <h1 class="text-3xl md:text-4xl font-bold mb-4">Рейтинг участников и проектов</h1>
+                <p class="text-lg mb-6">Найдите лучших участников для своих проектов и оцените успешные проекты платформы</p>
+                <div class="flex justify-center gap-4">
+                    <button class="px-6 py-3 bg-white text-[#065B5E] font-medium rounded-md hover:bg-[#8BDAC3]/20 transition">
+                        Топ участников
+                    </button>
+                    <button class="px-6 py-3 bg-[#8BDAC3]/20 text-white font-medium rounded-md hover:bg-[#8BDAC3]/40 transition">
+                        Топ проектов
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Rating Navigation -->
+        <div class="flex mb-6 border-b border-gray-200">
+            <button id="participantsTab" class="px-6 py-3 text-lg font-medium text-[#065B5E] tab-active">
+                Участники
+            </button>
+            <button id="projectsTab" class="px-6 py-3 text-lg font-medium text-gray-500 hover:text-[#065B5E]">
+                Проекты
+            </button>
+        </div>
+        
+        <!-- Participants Rating Section -->
+        <section id="participantsSection">
+            <!-- Filters -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <h2 class="text-xl font-semibold text-[#065B5E] mb-4">Фильтры</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="filter-card bg-gray-50 p-4 rounded-lg cursor-pointer">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-[#8BDAC3]/20 flex items-center justify-center text-[#065B5E] mr-3">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-[#065B5E]">Студенты</h3>
+                                <p class="text-sm text-gray-500">Всего: 1,245</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filter-card bg-gray-50 p-4 rounded-lg cursor-pointer">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-[#8BDAC3]/20 flex items-center justify-center text-[#065B5E] mr-3">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-[#065B5E]">Преподаватели</h3>
+                                <p class="text-sm text-gray-500">Всего: 87</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filter-card bg-gray-50 p-4 rounded-lg cursor-pointer">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-[#8BDAC3]/20 flex items-center justify-center text-[#065B5E] mr-3">
+                                <i class="fas fa-handshake"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-[#065B5E]">Партнеры</h3>
+                                <p class="text-sm text-gray-500">Всего: 42</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filter-card bg-gray-50 p-4 rounded-lg cursor-pointer">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-[#8BDAC3]/20 flex items-center justify-center text-[#065B5E] mr-3">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-[#065B5E]">Город</h3>
+                                <p class="text-sm text-gray-500">Выберите город</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Top Participants -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-[#065B5E]">Топ участников</h2>
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-500 mr-3">Сортировка:</span>
+                        <select class="border border-[#8BDAC3] rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#8BDAC3]">
+                            <option>По рейтингу</option>
+                            <option>По количеству проектов</option>
+                            <option>По компетенциям</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Participant 1 -->
+                    <div class="participant-card bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-start mb-4">
+                                <div class="rank-badge rank-1 mr-4">1</div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <h3 class="text-lg font-semibold text-[#065B5E]">Иван Петров</h3>
+                                        <div class="flex items-center">
+                                            <span class="text-[#065B5E] font-bold mr-1">4.9</span>
+                                            <div class="flex">
+                                                <i class="fas fa-star rating-star"></i>
+                                                <i class="fas fa-star rating-star"></i>
+                                                <i class="fas fa-star rating-star"></i>
+                                                <i class="fas fa-star rating-star"></i>
+                                                <i class="fas fa-star rating-star"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mb-2">МГУ, Компьютерные науки</p>
+                                    <div class="flex flex-wrap gap-1 mb-3">
+                                        <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">Python</span>
+                                        <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">ML</span>
+                                        <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">React</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Профессионализм</span>
+                                    <span>4.8</span>
+                                </div>
+                                <div class="rating-chart">
+                                    <div class="rating-fill" style="width: 96%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Коммуникация</span>
+                                    <span>4.9</span>
+                                </div>
+                                <div class="rating-chart">
+                                    <div class="rating-fill" style="width: 98%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Надежность</span>
+                                    <span>5.0</span>
+                                </div>
+                                <div class="rating-chart">
+                                    <div class="rating-fill" style="width: 100%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-600">
+                                <span><i class="fas fa-project-diagram mr-1"></i> Проектов: 12</span>
+                                <span><i class="fas fa-medal mr-1"></i> Достижений: 8</span>
+                            </div>
+                        </div>
+                        <div class="px-6 pb-4">
+                            <button class="w-full py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                                Пригласить в проект
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Participant 2 -->
+                    <div class="participant-card bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-start mb-4">
+                                <div class="rank-badge rank-2 mr-4">2</div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <h3 class="text-lg font-semibold text-[#065B5E]">Анна Смирнова</h3>
+                                        <div class="flex items-center">
+                                            <span class="text-[#065B5E] font-bold mr-1">4.8</span>
+                                            <div class="flex">
+                                                <i class="fas fa-star rating-star"></i>
+                                                <i class="fas fa-star rating-star"></i>
+                                                <i class="fas fa-star rating-star"></i>
+                                                <i class="fas fa-star rating-star"></i>
+                                                <i class="fas fa-star rating-star"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mb-2">СПбГУ, Дизайн</p>
+                                    <div class="flex flex-wrap gap-1 mb-3">
+                                        <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">UI/UX</span>
+                                        <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">Figma</span>
+                                        <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">Illustrator</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Профессионализм</span>
+                                    <span>4.9</span>
+                                </div>
+                                <div class="rating-chart">
+                                    <div class="rating-fill" style="width: 98%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Коммуникация</span>
+                                    <span>4.7</span>
+                                </div>
+                                <div class="rating-chart">
+                                    <div class="rating-fill" style="width: 94%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Надежность</span>
+                                    <span>4.8</span>
+                                </div>
+                                <div class="rating-chart">
+                                    <div class="rating-fill" style="width: 96%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-600">
+                                <span><i class="fas fa-project-diagram mr-1"></i> Проектов: 9</span>
+                                <span><i class="fas fa-medal mr-1"></i> Достижений: 6</span>
+                            </div>
+                        </div>
+                        <div class="px-6 pb-4">
+                            <button class="w-full py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                                Пригласить в проект
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Participant 3 -->
+                    <div class="participant-card bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-start mb-4">
+                                <div class="rank-badge rank-3 mr-4">3</div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between">
+                                        <h3 class="text-lg font-semibold text-[#065B5E]">Дмитрий Иванов</h3>
+                                        <div class="flex items-center">
+                                            <span class="text-[#065B5E] font-bold mr-1">4.7</span>
+                                            <div class="flex">
+                                                <i class="fas fa-star rating-star"></i>
+                                                <i class="fas fa-star rating-star"></i>
+                                                <i class="fas fa-star rating-star"></i>
+                                                <i class="fas fa-star rating-star"></i>
+                                                <i class="fas fa-star rating-star"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-500 mb-2">НГУ, Физика</p>
+                                    <div class="flex flex-wrap gap-1 mb-3">
+                                        <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">Анализ данных</span>
+                                        <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">Python</span>
+                                        <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">Matlab</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Профессионализм</span>
+                                    <span>4.8</span>
+                                </div>
+                                <div class="rating-chart">
+                                    <div class="rating-fill" style="width: 96%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Коммуникация</span>
+                                    <span>4.5</span>
+                                </div>
+                                <div class="rating-chart">
+                                    <div class="rating-fill" style="width: 90%"></div>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <div class="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Надежность</span>
+                                    <span>4.7</span>
+                                </div>
+                                <div class="rating-chart">
+                                    <div class="rating-fill" style="width: 94%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-600">
+                                <span><i class="fas fa-project-diagram mr-1"></i> Проектов: 7</span>
+                                <span><i class="fas fa-medal mr-1"></i> Достижений: 5</span>
+                            </div>
+                        </div>
+                        <div class="px-6 pb-4">
+                            <button class="w-full py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                                Пригласить в проект
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- All Participants Table -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="flex justify-between items-center p-6 border-b border-gray-100">
+                    <h2 class="text-xl font-semibold text-[#065B5E]">Все участники</h2>
+                    <div class="flex items-center">
+                        <div class="relative mr-4">
+                            <input type="text" placeholder="Поиск участников..." class="pl-10 pr-4 py-2 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+                        </div>
+                        <button class="px-4 py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                            Экспорт
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Рейтинг</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Участник</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ВУЗ</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Проекты</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Оценки</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <!-- Row 1 -->
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-lg font-bold text-[#065B5E]">4</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10">
+                                            <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-800">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">Мария Сидорова</div>
+                                            <div class="text-sm text-gray-500">Студент</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">МФТИ</div>
+                                    <div class="text-sm text-gray-500">Биоинформатика</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">8 проектов</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <span class="text-[#065B5E] font-bold mr-1">4.6</span>
+                                        <div class="flex">
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star-half-alt rating-star"></i>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <button class="text-[#065B5E] hover:text-[#C198FF] font-medium">
+                                        Пригласить
+                                    </button>
+                                </td>
+                            </tr>
+                            
+                            <!-- Row 2 -->
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-lg font-bold text-[#065B5E]">5</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10">
+                                            <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-800">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">Алексей Козлов</div>
+                                            <div class="text-sm text-gray-500">Преподаватель</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">ВШЭ</div>
+                                    <div class="text-sm text-gray-500">Экономика</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">6 проектов</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <span class="text-[#065B5E] font-bold mr-1">4.5</span>
+                                        <div class="flex">
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="far fa-star rating-star-empty"></i>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <button class="text-[#065B5E] hover:text-[#C198FF] font-medium">
+                                        Пригласить
+                                    </button>
+                                </td>
+                            </tr>
+                            
+                            <!-- Row 3 -->
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-lg font-bold text-[#065B5E]">6</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10">
+                                            <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-800">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">Екатерина Новикова</div>
+                                            <div class="text-sm text-gray-500">Студент</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">МГТУ им. Баумана</div>
+                                    <div class="text-sm text-gray-500">Инженерия</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">10 проектов</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <span class="text-[#065B5E] font-bold mr-1">4.5</span>
+                                        <div class="flex">
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="far fa-star rating-star-empty"></i>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <button class="text-[#065B5E] hover:text-[#C198FF] font-medium">
+                                        Пригласить
+                                    </button>
+                                </td>
+                            </tr>
+                            
+                            <!-- Row 4 -->
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-lg font-bold text-[#065B5E]">7</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10">
+                                            <div class="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-800">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">Артем Волков</div>
+                                            <div class="text-sm text-gray-500">Партнер</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">IT Solutions LLC</div>
+                                    <div class="text-sm text-gray-500">Технологический партнер</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">5 проектов</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <span class="text-[#065B5E] font-bold mr-1">4.4</span>
+                                        <div class="flex">
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="fas fa-star rating-star"></i>
+                                            <i class="far fa-star rating-star-empty"></i>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <button class="text-[#065B5E] hover:text-[#C198FF] font-medium">
+                                        Пригласить
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="bg-white px-6 py-4 border-t border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-700">
+                            Показано <span class="font-medium">1</span> - <span class="font-medium">10</span> из <span class="font-medium">124</span> участников
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                Назад
+                            </button>
+                            <button class="px-3 py-1 bg-[#065B5E] text-white rounded-md text-sm font-medium hover:bg-[#C198FF]">
+                                1
+                            </button>
+                            <button class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                2
+                            </button>
+                            <button class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                3
+                            </button>
+                            <button class="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                Далее
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Projects Rating Section (Hidden by default) -->
+        <section id="projectsSection" class="hidden">
+            <!-- Top Projects -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-[#065B5E]">Топ проектов</h2>
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-500 mr-3">Сортировка:</span>
+                        <select class="border border-[#8BDAC3] rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#8BDAC3]">
+                            <option>По рейтингу</option>
+                            <option>По количеству участников</option>
+                            <option>По дате создания</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Project 1 -->
+                    <div class="project-card bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="h-48 bg-gradient-to-r from-purple-500 to-purple-600 flex items-center justify-center">
+                            <i class="fas fa-robot text-white text-5xl"></i>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-lg font-semibold text-[#065B5E]">Образовательный чат-бот</h3>
+                                <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">IT</span>
+                            </div>
+                            <p class="text-[#444] text-sm mb-4">Создание AI-ассистента для помощи студентам в изучении программирования.</p>
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="flex items-center text-gray-500">
+                                    <i class="fas fa-users mr-1"></i>
+                                    <span>5 участников</span>
+                                </div>
+                                <div class="text-gray-500">
+                                    <i class="far fa-calendar mr-1"></i>
+                                    <span>3 месяца</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-[#065B5E] font-bold mr-2">4.8</span>
+                                <div class="flex mr-2">
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="fas fa-star-half-alt rating-star"></i>
+                                </div>
+                                <span class="text-sm text-gray-500">(24 оценки)</span>
+                            </div>
+                        </div>
+                        <div class="px-6 pb-4">
+                            <button class="w-full py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                                Подробнее
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Project 2 -->
+                    <div class="project-card bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="h-48 bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center">
+                            <i class="fas fa-leaf text-white text-5xl"></i>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-lg font-semibold text-[#065B5E]">Экологический мониторинг</h3>
+                                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Экология</span>
+                            </div>
+                            <p class="text-[#444] text-sm mb-4">Разработка системы мониторинга качества воздуха с открытыми данными.</p>
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="flex items-center text-gray-500">
+                                    <i class="fas fa-users mr-1"></i>
+                                    <span>8 участников</span>
+                                </div>
+                                <div class="text-gray-500">
+                                    <i class="far fa-calendar mr-1"></i>
+                                    <span>6 месяцев</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-[#065B5E] font-bold mr-2">4.7</span>
+                                <div class="flex mr-2">
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="far fa-star rating-star-empty"></i>
+                                </div>
+                                <span class="text-sm text-gray-500">(18 оценок)</span>
+                            </div>
+                        </div>
+                        <div class="px-6 pb-4">
+                            <button class="w-full py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                                Подробнее
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Project 3 -->
+                    <div class="project-card bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="h-48 bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                            <i class="fas fa-microscope text-white text-5xl"></i>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-lg font-semibold text-[#065B5E]">Исследование материалов</h3>
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Наука</span>
+                            </div>
+                            <p class="text-[#444] text-sm mb-4">Междисциплинарное исследование композитных материалов для медицины.</p>
+                            <div class="flex justify-between items-center mb-4">
+                                <div class="flex items-center text-gray-500">
+                                    <i class="fas fa-users mr-1"></i>
+                                    <span>4 участника</span>
+                                </div>
+                                <div class="text-gray-500">
+                                    <i class="far fa-calendar mr-1"></i>
+                                    <span>4 месяца</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-[#065B5E] font-bold mr-2">4.6</span>
+                                <div class="flex mr-2">
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="fas fa-star rating-star"></i>
+                                    <i class="far fa-star rating-star-empty"></i>
+                                </div>
+                                <span class="text-sm text-gray-500">(15 оценок)</span>
+                            </div>
+                        </div>
+                        <div class="px-6 pb-4">
+                            <button class="w-full py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">
+                                Подробнее
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rating Explanation -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+                <h2 class="text-xl font-semibold text-[#065B5E] mb-4">Как работает рейтинговая система?</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-medium text-[#065B5E] mb-2">Для участников</h3>
+                        <p class="text-sm text-[#444] mb-4">Участники получают оценки от руководителей проектов и коллег по команде после завершения совместной работы. Рейтинг учитывает:</p>
+                        <ul class="text-sm text-[#444] space-y-2">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#8BDAC3] mt-1 mr-2"></i>
+                                <span>Профессиональные навыки и компетенции</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#8BDAC3] mt-1 mr-2"></i>
+                                <span>Коммуникативные способности</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#8BDAC3] mt-1 mr-2"></i>
+                                <span>Надежность и выполнение обязательств</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#8BDAC3] mt-1 mr-2"></i>
+                                <span>Вклад в проект</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-[#065B5E] mb-2">Для проектов</h3>
+                        <p class="text-sm text-[#444] mb-4">Проекты оцениваются участниками платформы после их завершения. Критерии оценки включают:</p>
+                        <ul class="text-sm text-[#444] space-y-2">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#8BDAC3] mt-1 mr-2"></i>
+                                <span>Качество реализации проекта</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#8BDAC3] mt-1 mr-2"></i>
+                                <span>Практическая значимость результатов</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#8BDAC3] mt-1 mr-2"></i>
+                                <span>Организация работы команды</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#8BDAC3] mt-1 mr-2"></i>
+                                <span>Инновационность решения</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">МостВектор</h3>
+                    <p class="text-gray-400 text-sm">Платформа для формирования междисциплинарных и межвузовских проектных команд.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Навигация</h3>
+                    <ul class="space-y-2">
+                        <li><a href="projects.html" class="text-gray-400 hover:text-white text-sm">Главная</a></li>
+                        <li><a href="projects.html" class="text-gray-400 hover:text-white text-sm">Проекты</a></li>
+                        <li><a href="projects.html" class="text-gray-400 hover:text-white text-sm">Форум</a></li>
+                        <li><a href="projects.html" class="text-gray-400 hover:text-white text-sm">Идеи</a></li>
+                        <li><a href="rating.html" class="text-gray-400 hover:text-white text-sm">Рейтинг</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Контакты</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-envelope mr-2"></i> contact@mostvector.ru</li>
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-phone mr-2"></i> +7 (123) 456-78-90</li>
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-map-marker-alt mr-2"></i> Москва, ул. Студенческая, 1</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Подписаться</h3>
+                    <p class="text-gray-400 text-sm mb-4">Будьте в курсе новых проектов и возможностей.</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Ваш email" class="px-3 py-2 bg-gray-700 text-white rounded-l-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] w-full">
+                        <button class="px-4 py-2 bg-[#065B5E] text-white rounded-r-md hover:bg-[#C198FF] transition">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="flex space-x-4 mt-4">
+                        <a href="projects.html" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-vk"></i></a>
+                        <a href="projects.html" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-telegram"></i></a>
+                        <a href="projects.html" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm mb-4 md:mb-0">© 2025 МостВектор. Все права защищены.</p>
+                <div class="flex space-x-4">
+                    <a href="projects.html" class="text-gray-400 hover:text-white text-sm">Пользовательское соглашение</a>
+                    <a href="projects.html" class="text-gray-400 hover:text-white text-sm">Политика конфиденциальности</a>
+                    <a href="projects.html" class="text-gray-400 hover:text-white text-sm">FAQ</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching functionality
+            const participantsTab = document.getElementById('participantsTab');
+            const projectsTab = document.getElementById('projectsTab');
+            const participantsSection = document.getElementById('participantsSection');
+            const projectsSection = document.getElementById('projectsSection');
+            
+            participantsTab.addEventListener('click', function() {
+                participantsTab.classList.add('tab-active');
+                projectsTab.classList.remove('tab-active');
+                participantsSection.classList.remove('hidden');
+                projectsSection.classList.add('hidden');
+            });
+            
+            projectsTab.addEventListener('click', function() {
+                projectsTab.classList.add('tab-active');
+                participantsTab.classList.remove('tab-active');
+                projectsSection.classList.remove('hidden');
+                participantsSection.classList.add('hidden');
+            });
+            
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobileMenuButton');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            mobileMenuButton.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // Filter card interaction
+            const filterCards = document.querySelectorAll('.filter-card');
+            filterCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    filterCards.forEach(c => c.classList.remove('ring-2', 'ring-[#C198FF]'));
+                    this.classList.add('ring-2', 'ring-[#C198FF]');
+                });
+            });
+            
+            // Auth state check
+            const authButton = document.getElementById('authButton');
+            const userData = localStorage.getItem('currentUser');
+            
+            if (authButton) {
+                try {
+                    const currentUser = JSON.parse(userData);
+                    if (currentUser) {
+                        authButton.textContent = 'Личный кабинет';
+                        authButton.setAttribute('href', 'profile.html');
+                    } else {
+                        authButton.textContent = 'Войти';
+                        authButton.setAttribute('href', 'login.html');
+                    }
+                } catch (e) {
+                    console.error('Ошибка чтения currentUser:', e);
+                    authButton.textContent = 'Войти';
+                    authButton.setAttribute('href', 'login.html');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

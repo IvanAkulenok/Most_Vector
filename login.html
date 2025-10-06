@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход — МостВектор</title>
+    <script src="https://cdn.tailwindcss.com">
+        function updateRequiredFieldsByRole() {
+            const role = roleSelect.value;
+
+            // Сначала снимаем required со всех возможных полей
+            ['university', 'course', 'specialization', 'teacherUniversity', 'position', 'orgInfo'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.removeAttribute('required');
+            });
+            document.querySelectorAll('input[name="orgType"]').forEach(el => el.removeAttribute('required'));
+
+            // Добавляем required только тем полям, которые сейчас видимы
+            if (role === 'student') {
+                ['university', 'course', 'specialization'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.setAttribute('required', 'true');
+                });
+            } else if (role === 'teacher') {
+                ['teacherUniversity', 'position'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.setAttribute('required', 'true');
+                });
+            } else if (role === 'partner') {
+                document.querySelectorAll('input[name="orgType"]').forEach(el => el.setAttribute('required', 'true'));
+                const orgInfo = document.getElementById('orgInfo');
+                if (orgInfo) orgInfo.setAttribute('required', 'true');
+            }
+        }
+
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+            .gradient-bg {
+            background: linear-gradient(135deg, #8BDAC3 0%, #065B5E 50%, #C198FF 100%);
+        }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        .valid {
+            color: #10b981;
+        }
+        .invalid {
+            color: #ef4444;
+        }
+        .password-container {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6b7280;
+        }
+    </style>
+<script>
+/* ------------ Per‑user storage shim ------------ */
+(function(){
+  const store = window.localStorage;
+  const g  = store.getItem.bind(store);
+  const s  = store.setItem.bind(store);
+  const rm = store.removeItem.bind(store);
+
+  function persistCurrent(value){
+    try{
+      const obj = JSON.parse(value);
+      const id  = obj.uid || obj.email || obj.fullName || 'unknown';
+      const users = JSON.parse(g('users') || '{}');
+      users[id] = obj;
+      s('users', JSON.stringify(users));
+      s('currentUserId', id);
+      s('currentUser', value); // keep legacy key
+    }catch(e){
+      s('currentUser', value);
+    }
+  }
+
+  // migrate legacy key once
+  const legacy = g('currentUser');
+  if (legacy) persistCurrent(legacy);
+
+  // intercept writes
+  store.setItem = function(key, value){
+    if (key === 'currentUser'){
+      persistCurrent(value);
+      return;
+    }
+    s(key,value);
+  };
+
+  // intercept reads
+  store.getItem = function(key){
+    if (key === 'currentUser'){
+      const users = JSON.parse(g('users') || '{}');
+      const id = g('currentUserId');
+      if (id && users[id]) return JSON.stringify(users[id]);
+      return g('currentUser'); // fallback
+    }
+    return g(key);
+  };
+
+  // keep tidy on logout
+  store.removeItem = function(key){
+    if (key === 'currentUser'){
+      rm('currentUserId');
+    }
+    rm(key);
+  };
+})();
+</script>
+</script>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+    <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <div class="mb-8 flex flex-col items-center">
+            <img src="/Логотип МостВектор.png" alt="Логотип МостВектор" class="w-24 h-24 mb-2">
+            <h1 class="text-2xl font-bold text-gray-800">МостВектор</h1>
+            <p class="text-gray-600">Межвузовские проектные команды</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="flex justify-between items-center border-b px-6 py-4">
+                <h3 class="text-lg font-semibold text-gray-800">Вход в систему</h3>
+            </div>
+            <div class="px-6 py-4">
+                <div class="flex border-b">
+                    <button id="loginTab" class="px-4 py-2 font-medium text-purple-600 border-b-2 border-purple-600">Вход</button>
+                    <button id="registerTab" class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Регистрация</button>
+                </div>
+                
+                <!-- Login Form -->
+                <div id="loginForm" class="mt-4">
+                    <form id="loginFormElement">
+                        <div class="mb-4">
+                            <label for="loginEmail" class="block text-gray-700 mb-2">Email</label>
+                            <input type="email" id="loginEmail" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <div id="loginEmailError" class="error-message hidden">Пожалуйста, введите корректный email</div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="loginPassword" class="block text-gray-700 mb-2">Пароль</label>
+                            <div class="password-container">
+                                <input type="password" id="loginPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 pr-10">
+                                <span class="toggle-password" onclick="togglePasswordVisibility('loginPassword', this)">
+                                    <i class="far fa-eye"></i>
+                                </span>
+                            </div>
+                            <div id="loginPasswordError" class="error-message hidden">Пожалуйста, введите пароль</div>
+                        </div>
+                        <div class="flex justify-between items-center mb-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="rememberMe" class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                                <label for="rememberMe" class="ml-2 block text-sm text-gray-700">Запомнить меня</label>
+                            </div>
+                            <a href="#" class="text-sm text-purple-600 hover:text-purple-800">Забыли пароль?</a>
+                        </div>
+                          <button type="submit" class="w-full bg-[#C198FF] text-white py-2 px-4 rounded-md hover:bg-[#065B5E] transition">
+                            Войти
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Registration Form -->
+                <div id="registerForm" class="mt-4 hidden">
+                    <form id="registerFormElement">
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="firstName" class="block text-gray-700 mb-2">Имя</label>
+                                <input type="text" id="firstName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <div id="firstNameError" class="error-message hidden">Пожалуйста, введите имя</div>
+                            </div>
+                            <div>
+                                <label for="lastName" class="block text-gray-700 mb-2">Фамилия</label>
+                                <input type="text" id="lastName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <div id="lastNameError" class="error-message hidden">Пожалуйста, введите фамилию</div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="middleName" class="block text-gray-700 mb-2">Отчество</label>
+                            <input type="text" id="middleName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        </div>
+                        <div class="mb-4">
+                            <label for="birthDate" class="block text-gray-700 mb-2">Дата рождения</label>
+                            <input type="date" id="birthDate" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <div id="birthDateError" class="error-message hidden">Пожалуйста, введите дату рождения</div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 mb-2">Пол</label>
+                            <div class="flex space-x-4">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="gender" value="male" required class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300">
+                                    <span class="ml-2 text-gray-700">Мужской</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="gender" value="female" required class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300">
+                                    <span class="ml-2 text-gray-700">Женский</span>
+                                </label>
+                            </div>
+                            <div id="genderError" class="error-message hidden">Пожалуйста, выберите пол</div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="role" class="block text-gray-700 mb-2">Роль</label>
+                            <select id="role" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="">Выберите роль</option>
+                                <option value="student">Студент</option>
+                                <option value="teacher">Преподаватель</option>
+                                <option value="partner">Партнер</option>
+                            </select>
+                            <div id="roleError" class="error-message hidden">Пожалуйста, выберите роль</div>
+                        </div>
+<script>
+document.getElementById('registerFormElement').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const userData = {
+        firstName: document.getElementById('firstName').value,
+        lastName: document.getElementById('lastName').value,
+        middleName: document.getElementById('middleName').value,
+        birthDate: document.getElementById('birthDate').value,
+        gender: document.querySelector('input[name="gender"]:checked')?.value || '',
+        role: document.getElementById('role').value,
+        email: document.getElementById('email').value,
+        university: '',
+        course: '',
+        specialization: '',
+        teacherUniversity: '',
+        position: '',
+        orgType: '',
+        orgInfo: ''
+    };
+
+    if (userData.role === 'student') {
+        userData.university = document.getElementById('university').value;
+        userData.course = document.getElementById('course').value;
+        userData.specialization = document.getElementById('specialization').value;
+    } else if (userData.role === 'teacher') {
+        userData.teacherUniversity = document.getElementById('teacherUniversity').value;
+        userData.position = document.getElementById('position').value;
+    } else if (userData.role === 'partner') {
+        userData.orgType = document.querySelector('input[name="orgType"]:checked')?.value || '';
+        userData.orgInfo = document.getElementById('orgInfo').value;
+    }
+
+    // Сохраняем в localStorage
+    localStorage.setItem('userData', JSON.stringify(userData));
+
+    // Перенаправляем
+    window.location.href = 'profile.html';
+});
+
+        function updateRequiredFieldsByRole() {
+            const role = roleSelect.value;
+
+            // Сначала снимаем required со всех возможных полей
+            ['university', 'course', 'specialization', 'teacherUniversity', 'position', 'orgInfo'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.removeAttribute('required');
+            });
+            document.querySelectorAll('input[name="orgType"]').forEach(el => el.removeAttribute('required'));
+
+            // Добавляем required только тем полям, которые сейчас видимы
+            if (role === 'student') {
+                ['university', 'course', 'specialization'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.setAttribute('required', 'true');
+                });
+            } else if (role === 'teacher') {
+                ['teacherUniversity', 'position'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.setAttribute('required', 'true');
+                });
+            } else if (role === 'partner') {
+                document.querySelectorAll('input[name="orgType"]').forEach(el => el.setAttribute('required', 'true'));
+                const orgInfo = document.getElementById('orgInfo');
+                if (orgInfo) orgInfo.setAttribute('required', 'true');
+            }
+        }
+
+    </script>
+                        <!-- Student Fields -->
+                        <div id="studentFields" class="mb-4 hidden">
+                            <div class="mb-2">
+                                <label for="university" class="block text-gray-700 mb-2">ВУЗ</label>
+                                <input type="text" id="university" name="university" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <div id="universityError" class="error-message hidden">Пожалуйста, введите название ВУЗа</div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="course" class="block text-gray-700 mb-2">Курс</label>
+                                    <select id="course" name="course" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                        <option value="">Выберите курс</option>
+                                        <option value="1">1 курс</option>
+                                        <option value="2">2 курс</option>
+                                        <option value="3">3 курс</option>
+                                        <option value="4">4 курс</option>
+                                        <option value="5">5 курс</option>
+                                        <option value="6">6 курс</option>
+                                    </select>
+                                    <div id="courseError" class="error-message hidden">Пожалуйста, выберите курс</div>
+                                </div>
+                                <div>
+                                    <label for="specialization" class="block text-gray-700 mb-2">Направление</label>
+                                    <input type="text" id="specialization" name="specialization" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <div id="specializationError" class="error-message hidden">Пожалуйста, введите направление</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Teacher Fields -->
+                        <div id="teacherFields" class="mb-4 hidden">
+                            <div class="mb-2">
+                                <label for="teacherUniversity" class="block text-gray-700 mb-2">ВУЗ</label>
+                                <input type="text" id="teacherUniversity" name="teacherUniversity" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <div id="teacherUniversityError" class="error-message hidden">Пожалуйста, введите название ВУЗа</div>
+                            </div>
+                            <div>
+                                <label for="position" class="block text-gray-700 mb-2">Должность</label>
+                                <input type="text" id="position" name="position" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <div id="positionError" class="error-message hidden">Пожалуйста, введите должность</div>
+                            </div>
+                        </div>
+
+                        <!-- Partner Fields -->
+                        <div id="partnerFields" class="mb-4 hidden">
+                            <div class="mb-2">
+                                <label class="block text-gray-700 mb-2">Тип организации</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="orgType" value="individual" required class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300">
+                                        <span class="ml-2 text-gray-700">Физ. лицо</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="orgType" value="legal" required class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300">
+                                        <span class="ml-2 text-gray-700">Юр. лицо</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="orgType" value="entrepreneur" required class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300">
+                                        <span class="ml-2 text-gray-700">ИП</span>
+                                    </label>
+                                </div>
+                                <div id="orgTypeError" class="error-message hidden">Пожалуйста, выберите тип организации</div>
+                            </div>
+                            <div>
+                                <label for="orgInfo" class="block text-gray-700 mb-2">Информация об организации</label>
+                                <textarea id="orgInfo" name="orgInfo" rows="3" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                                <div id="orgInfoError" class="error-message hidden">Пожалуйста, введите информацию об организации</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="email" class="block text-gray-700 mb-2">Email</label>
+                            <input type="email" id="email" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <div id="emailError" class="error-message hidden">Пожалуйста, введите корректный email</div>
+                        </div>
+                        
+                        <!-- Пароль -->
+                        <div class="mb-4">
+                            <label for="password" class="block text-gray-700 mb-2">Пароль</label>
+                            <div class="password-container">
+                                <input type="password" id="password" required 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 pr-10"
+                                    oninput="validatePassword(this.value)">
+                                <span class="toggle-password" onclick="togglePasswordVisibility('password', this)">
+                                    <i class="far fa-eye"></i>
+                                </span>
+                            </div>
+                            
+                            <!-- Блок с требованиями к паролю -->
+                            <div id="passwordRequirements" class="mt-2 space-y-1 text-sm">
+                                <div id="lengthRequirement" class="flex items-center">
+                                    <i id="lengthIcon" class="far fa-circle mr-2 text-gray-500"></i>
+                                    <span>Минимум 8 символов</span>
+                                </div>
+                                <div id="uppercaseRequirement" class="flex items-center">
+                                    <i id="uppercaseIcon" class="far fa-circle mr-2 text-gray-500"></i>
+                                    <span>Одна заглавная буква</span>
+                                </div>
+                                <div id="specialCharRequirement" class="flex items-center">
+                                    <i id="specialCharIcon" class="far fa-circle mr-2 text-gray-500"></i>
+                                    <span>Один специальный символ</span>
+                                </div>
+                            </div>
+                            <div id="passwordError" class="error-message hidden">
+                                Пароль должен содержать минимум 8 символов, одну заглавную букву и один специальный символ
+                            </div>
+                        </div>
+
+                        <!-- Подтверждение пароля -->
+                        <div class="mb-4">
+                            <label for="confirmPassword" class="block text-gray-700 mb-2">Повторите пароль</label>
+                            <div class="password-container">
+                                <input type="password" id="confirmPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 pr-10">
+                                <span class="toggle-password" onclick="togglePasswordVisibility('confirmPassword', this)">
+                                    <i class="far fa-eye"></i>
+                                </span>
+                            </div>
+                            <div id="confirmPasswordError" class="error-message hidden">Пароли не совпадают</div>
+                        </div>
+                       <button type="submit" class="w-full bg-[#C198FF] text-white py-2 px-4 rounded-md hover:bg-[#065B5E] transition">
+                            Продолжить
+                        </button>
+                        
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Функция для переключения видимости пароля
+        function togglePasswordVisibility(fieldId, element) {
+            const field = document.getElementById(fieldId);
+            const icon = element.querySelector('i');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Переключение вкладок
+        const loginTab = document.getElementById('loginTab');
+        const registerTab = document.getElementById('registerTab');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+
+        loginTab.addEventListener('click', () => {
+            loginTab.classList.add('text-purple-600', 'border-purple-600');
+            loginTab.classList.remove('text-gray-500');
+            registerTab.classList.add('text-gray-500');
+            registerTab.classList.remove('text-purple-600', 'border-purple-600');
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+        });
+
+        registerTab.addEventListener('click', () => {
+            registerTab.classList.add('text-purple-600', 'border-purple-600');
+            registerTab.classList.remove('text-gray-500');
+            loginTab.classList.add('text-gray-500');
+            loginTab.classList.remove('text-purple-600', 'border-purple-600');
+            registerForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+            
+        });
+
+        // Роли
+        const roleSelect = document.getElementById('role');
+        const studentFields = document.getElementById('studentFields');
+        const teacherFields = document.getElementById('teacherFields');
+        const partnerFields = document.getElementById('partnerFields');
+
+        // Показать поля для выбранной роли
+        function showRoleFields() {
+    updateRequiredFieldsByRole();
+            studentFields.classList.add('hidden');
+            teacherFields.classList.add('hidden');
+            partnerFields.classList.add('hidden');
+
+            if (roleSelect.value === 'student') studentFields.classList.remove('hidden');
+            else if (roleSelect.value === 'teacher') teacherFields.classList.remove('hidden');
+            else if (roleSelect.value === 'partner') partnerFields.classList.remove('hidden');
+        }
+
+        // Вызываем при загрузке страницы
+        showRoleFields();
+        
+        roleSelect.addEventListener('change', showRoleFields);
+
+        // Функция валидации пароля
+        function validatePassword(password) {
+            // Получаем элементы иконок
+            const lengthIcon = document.getElementById('lengthIcon');
+            const uppercaseIcon = document.getElementById('uppercaseIcon');
+            const specialCharIcon = document.getElementById('specialCharIcon');
+            
+            // Сбрасываем стили
+            document.querySelectorAll('#passwordRequirements div').forEach(el => {
+                el.classList.remove('valid', 'invalid');
+            });
+            
+            // Проверяем условия
+            const isValidLength = password.length >= 8;
+            // Разрешаем латинские и кириллические заглавные буквы
+            const hasUppercase = /[A-ZА-Я]/.test(password);
+            // Разрешаем русские символы и специальные символы
+            const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+            
+            // Обновляем иконки и стили
+            updateValidationIcon('lengthRequirement', isValidLength, lengthIcon);
+            updateValidationIcon('uppercaseRequirement', hasUppercase, uppercaseIcon);
+            updateValidationIcon('specialCharRequirement', hasSpecialChar, specialCharIcon);
+            
+            return isValidLength && hasUppercase && hasSpecialChar;
+        }
+
+        // Обновление иконки валидации
+        function updateValidationIcon(elementId, isValid, iconElement) {
+            const element = document.getElementById(elementId);
+            
+            if (isValid) {
+                element.classList.add('valid');
+                element.classList.remove('invalid');
+                iconElement.classList.remove('fa-circle', 'fa-times-circle', 'text-gray-500', 'text-red-500');
+                iconElement.classList.add('fa-check-circle', 'text-green-500');
+            } else {
+                element.classList.add('invalid');
+                element.classList.remove('valid');
+                iconElement.classList.remove('fa-circle', 'fa-check-circle', 'text-gray-500', 'text-green-500');
+                iconElement.classList.add('fa-times-circle', 'text-red-500');
+            }
+        }
+
+        // Обработчик формы входа
+        document.getElementById('loginFormElement').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Сбросить ошибки
+            document.getElementById('loginEmailError').classList.add('hidden');
+            document.getElementById('loginPasswordError').classList.add('hidden');
+            
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            
+            let isValid = true;
+            
+            if (!email) {
+                document.getElementById('loginEmailError').classList.remove('hidden');
+                isValid = false;
+            }
+            
+            if (!password) {
+                document.getElementById('loginPasswordError').classList.remove('hidden');
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            // Получаем пользователей из localStorage
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            
+            // Ищем пользователя
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                // Сохраняем текущего пользователя
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                
+                // Перенаправляем на главную страницу
+                window.location.href = 'index.html';
+            } else {
+                alert('Неверный email или пароль');
+            }
+            
+        });
+
+        // Обработчик формы регистрации
+        document.getElementById('registerFormElement').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Сбросить все ошибки
+            document.querySelectorAll('.error-message').forEach(el => el.classList.add('hidden'));
+            
+            let isValid = true;
+            
+            // Проверка обязательных полей
+            const requiredFields = [
+                'firstName', 'lastName', 'birthDate', 'email', 'password', 'confirmPassword'
+            ];
+            
+            requiredFields.forEach(field => {
+                const value = document.getElementById(field).value.trim();
+                if (!value) {
+                    document.getElementById(`${field}Error`).classList.remove('hidden');
+                    isValid = false;
+                }
+            });
+            
+            // Проверка пола
+            const genderSelected = document.querySelector('input[name="gender"]:checked');
+            if (!genderSelected) {
+                document.getElementById('genderError').classList.remove('hidden');
+                isValid = false;
+            }
+            
+            // Проверка роли
+            const role = document.getElementById('role').value;
+            if (!role) {
+                document.getElementById('roleError').classList.remove('hidden');
+                isValid = false;
+            }
+            
+            // Проверка специфичных полей для ролей
+            if (role === 'student') {
+                const studentFields = ['university', 'course', 'specialization'];
+                studentFields.forEach(field => {
+                    const value = document.getElementById(field).value.trim();
+                    if (!value) {
+                        document.getElementById(`${field}Error`).classList.remove('hidden');
+                        isValid = false;
+                    }
+                });
+            } else if (role === 'teacher') {
+                const teacherFields = ['teacherUniversity', 'position'];
+                teacherFields.forEach(field => {
+                    const value = document.getElementById(field).value.trim();
+                    if (!value) {
+                        document.getElementById(`${field}Error`).classList.remove('hidden');
+                        isValid = false;
+                    }
+                });
+            } else if (role === 'partner') {
+                // Проверка типа организации
+                const orgTypeSelected = document.querySelector('input[name="orgType"]:checked');
+                if (!orgTypeSelected) {
+                    document.getElementById('orgTypeError').classList.remove('hidden');
+                    isValid = false;
+                }
+                
+                // Проверка информации об организации
+                const orgInfo = document.getElementById('orgInfo').value.trim();
+                if (!orgInfo) {
+                    document.getElementById('orgInfoError').classList.remove('hidden');
+                    isValid = false;
+                }
+            }
+            
+            // Проверка пароля
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Проверка сложности пароля
+            if (!validatePassword(password)) {
+                document.getElementById('passwordError').classList.remove('hidden');
+                isValid = false;
+            }
+            
+            // Проверка совпадения паролей
+            if (password !== confirmPassword) {
+                document.getElementById('confirmPasswordError').classList.remove('hidden');
+                isValid = false;
+            }
+            
+            // Если все проверки пройдены
+            if (isValid) {
+                // Получаем данные формы
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+                const middleName = document.getElementById('middleName').value;
+                const birthDate = document.getElementById('birthDate').value;
+                const gender = document.querySelector('input[name="gender"]:checked').value;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                // Создаем объект пользователя
+                const user = {
+                    firstName,
+                    lastName,
+                    middleName,
+                    birthDate,
+                    gender,
+                    role,
+                    email,
+                    password,
+                    avatar: `https://i.pravatar.cc/150?u=${email}`,
+                    createdAt: new Date().toISOString(),
+                    // Добавляем дополнительные поля для передачи
+                    fullName: `${lastName} ${firstName} ${middleName}`,
+                    university: role === 'student' ? document.getElementById('university').value : 
+                              role === 'teacher' ? document.getElementById('teacherUniversity').value : '',
+                    position: role === 'teacher' ? document.getElementById('position').value : '',
+                    course: role === 'student' ? document.getElementById('course').value : '',
+                    specialization: role === 'student' ? document.getElementById('specialization').value : ''
+                };
+                
+                // Добавляем специфичные данные для роли
+                if (role === 'student') {
+                    user.university = document.getElementById('university').value;
+                    user.course = document.getElementById('course').value;
+                    user.specialization = document.getElementById('specialization').value;
+                } else if (role === 'teacher') {
+                    user.university = document.getElementById('teacherUniversity').value;
+                    user.position = document.getElementById('position').value;
+                } else if (role === 'partner') {
+                    user.orgType = document.querySelector('input[name="orgType"]:checked').value;
+                    user.orgInfo = document.getElementById('orgInfo').value;
+                }
+                
+                // Получаем текущий список пользователей
+                let users = JSON.parse(localStorage.getItem('users')) || [];
+                
+                // Проверяем, существует ли пользователь с таким email
+                const userExists = users.some(u => u.email === email);
+                
+                if (userExists) {
+                    document.getElementById('emailError').textContent = 'Пользователь с таким email уже существует';
+                    document.getElementById('emailError').classList.remove('hidden');
+                    return;
+                }
+                
+                // Добавляем нового пользователя
+                users.push(user);
+                
+                // Сохраняем в localStorage
+                localStorage.setItem('users', JSON.stringify(users));
+                
+                // Сохраняем текущего пользователя
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                
+                // Перенаправляем на главную страницу
+                window.location.href = 'index.html';
+            }
+        });
+    
+        function updateRequiredFieldsByRole() {
+            const role = roleSelect.value;
+
+            // Сначала снимаем required со всех возможных полей
+            ['university', 'course', 'specialization', 'teacherUniversity', 'position', 'orgInfo'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.removeAttribute('required');
+            });
+            document.querySelectorAll('input[name="orgType"]').forEach(el => el.removeAttribute('required'));
+
+            // Добавляем required только тем полям, которые сейчас видимы
+            if (role === 'student') {
+                ['university', 'course', 'specialization'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.setAttribute('required', 'true');
+                });
+            } else if (role === 'teacher') {
+                ['teacherUniversity', 'position'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.setAttribute('required', 'true');
+                });
+            } else if (role === 'partner') {
+                document.querySelectorAll('input[name="orgType"]').forEach(el => el.setAttribute('required', 'true'));
+                const orgInfo = document.getElementById('orgInfo');
+                if (orgInfo) orgInfo.setAttribute('required', 'true');
+            }
+        }
+
+    </script>
+</body>
+</html>

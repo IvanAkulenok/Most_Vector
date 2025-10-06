@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Форум | МостВектор - Межвузовские проектные команды</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #8BDAC3 0%, #065B5E 50%, #C198FF 100%);
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .sidebar {
+            scrollbar-width: thin;
+            scrollbar-color: #e5e7eb #f3f4f6;
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background-color: #e5e7eb;
+            border-radius: 6px;
+        }
+        .idea-board {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)),
+                url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.2' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+        .forum-topic:hover {
+            background-color: #f9fafb;
+        }
+        .active-category {
+            background-color: #065B5E !important;
+            color: white !important;
+        }
+        .editor-toolbar {
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem 0.375rem 0 0;
+            padding: 0.5rem;
+            background-color: #f9fafb;
+        }
+        .editor-content {
+            min-height: 200px;
+            border: 1px solid #d1d5db;
+            border-top: none;
+            border-radius: 0 0 0.375rem 0.375rem;
+            padding: 1rem;
+        }
+        .editor-content:focus {
+            outline: none;
+        }
+        .tag:hover {
+            background-color: #065B5E;
+            color: white;
+        }
+    </style>
+    <script>
+        /* ------------ Per‑user storage shim ------------ */
+        (function(){
+            const store = window.localStorage;
+            const g  = store.getItem.bind(store);
+            const s  = store.setItem.bind(store);
+            const rm = store.removeItem.bind(store);
+            
+            function persistCurrent(value){
+                try{
+                    const obj = JSON.parse(value);
+                    const id  = obj.uid || obj.email || obj.fullName || 'unknown';
+                    const users = JSON.parse(g('users') || '{}');
+                    users[id] = obj;
+                    s('users', JSON.stringify(users));
+                    s('currentUserId', id);
+                    s('currentUser', value); // keep legacy key
+                }catch(e){
+                    s('currentUser', value);
+                }
+            }
+            
+            // migrate legacy key once
+            const legacy = g('currentUser');
+            if (legacy) persistCurrent(legacy);
+            
+            // intercept writes
+            store.setItem = function(key, value){
+                if (key === 'currentUser'){
+                    persistCurrent(value);
+                    return;
+                }
+                s(key,value);
+            };
+            
+            // intercept reads
+            store.getItem = function(key){
+                if (key === 'currentUser'){
+                    const users = JSON.parse(g('users') || '{}');
+                    const id = g('currentUserId');
+                    if (id && users[id]) return JSON.stringify(users[id]);
+                    return g('currentUser'); // fallback
+                }
+                return g(key);
+            };
+            
+            // keep tidy on logout
+            store.removeItem = function(key){
+                if (key === 'currentUser'){
+                    rm('currentUserId');
+                }
+                rm(key);
+            };
+        })();
+    </script>
+</head>
+<body class="bg-gray-50 font-sans antialiased">
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <a href="index.html" class="flex items-center space-x-2">
+                    <img src="/Логотип МостВектор.png" class="w-10 h-10">
+                    <span class="text-xl font-bold text-[#065B5E] hidden md:block">МостВектор</span>
+                </a>
+                
+                <nav class="hidden lg:flex space-x-1">
+                    <div class="relative group">
+                        <button class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium flex items-center space-x-1">
+                            <span>Проекты</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div class="absolute left-0 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block top-full">
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Все проекты</a>
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Создать проект</a>
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Популярные проекты</a>
+                            <a href="projects.html" class="block px-4 py-2 text-[#065B5E] hover:bg-[#8BDAC3]/20">Формирование команд</a>
+                        </div>
+                    </div>
+                    <a href="forum.html" class="px-4 py-2 text-[#065B5E] hover:text-gray-900 font-medium border-b-2 border-[#065B5E]">Форум</a>
+                    <a href="ideas.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Идеи</a>
+                    <a href="rating.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Рейтинг</a>
+                    <a href="chat.html" class="px-4 py-2 text-[#444] hover:text-gray-900 font-medium">Чаты</a>
+                </nav>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="relative hidden md:block">
+                    <input type="text" placeholder="Поиск..." class="pl-10 pr-4 py-2 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+                </div>
+                
+                <div class="relative">
+                    <button class="p-2 text-[#444] hover:text-gray-900 relative">
+                        <i class="far fa-bell text-xl"></i>
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full top-0.5"></span>
+                    </button>
+                </div>
+                
+                <div id="authContainer">
+                    <a id="authButton" href="login.html" class="px-4 py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">Войти</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu button -->
+        <div class="lg:hidden flex justify-between items-center px-4 py-2">
+            <button id="mobileMenuButton" class="text-[#444] hover:text-gray-900">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <div class="relative w-full max-w-xs mx-2">
+                <input type="text" placeholder="Поиск..." class="pl-8 pr-4 py-1 border border-[#8BDAC3] rounded-full focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent w-full">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobileMenu" class="hidden lg:hidden bg-white border-t border-gray-200 px-4 py-2">
+            <div class="flex flex-col space-y-1">
+                <div class="group">
+                    <button class="w-full flex justify-between items-center px-2 py-2 text-[#444] hover:text-gray-900">
+                        <span>Проекты</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    <div class="hidden group-focus-within:block pl-4">
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Все проекты</a>
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Создать проект</a>
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Популярные проекты</a>
+                        <a href="projects.html" class="block px-2 py-1 text-[#444] hover:text-gray-900">Формирование команд</a>
+                    </div>
+                </div>
+                <a href="forum.html" class="px-2 py-2 text-purple-800 font-medium">Форум</a>
+                <a href="ideas.html" class="px-2 py-2 text-[#444] hover:text-gray-900">Идеи</a>
+                <a href="rating.html" class="px-2 py-2 text-[#444] hover:text-gray-900">Рейтинг</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Forum Header -->
+        <section class="mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <div>
+                    <h1 class="text-3xl font-bold text-[#065B5E] mb-2">Форум</h1>
+                    <p class="text-[#444]">Обменивайтесь идеями, находите решения проектных задач и участников для своих команд</p>
+                </div>
+                <button id="createTopicBtn" class="mt-4 md:mt-0 px-6 py-3 bg-[#065B5E] text-white font-medium rounded-md hover:bg-[#C198FF] transition flex items-center">
+                    <i class="fas fa-plus mr-2"></i> Создать тему
+                </button>
+            </div>
+            
+            <!-- Categories -->
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button class="category-btn px-4 py-2 bg-[#8BDAC3]/20 text-[#065B5E] rounded-md hover:bg-[#8BDAC3]/40 transition active-category" data-category="all">Все</button>
+                <button class="category-btn px-4 py-2 bg-[#8BDAC3]/20 text-[#065B5E] rounded-md hover:bg-[#8BDAC3]/40 transition" data-category="ideas">Идеи</button>
+                <button class="category-btn px-4 py-2 bg-[#8BDAC3]/20 text-[#065B5E] rounded-md hover:bg-[#8BDAC3]/40 transition" data-category="help">Помощь</button>
+                <button class="category-btn px-4 py-2 bg-[#8BDAC3]/20 text-[#065B5E] rounded-md hover:bg-[#8BDAC3]/40 transition" data-category="team">Поиск участников</button>
+                <button class="category-btn px-4 py-2 bg-[#8BDAC3]/20 text-[#065B5E] rounded-md hover:bg-[#8BDAC3]/40 transition" data-category="discussion">Обсуждение</button>
+            </div>
+            
+            <!-- Search -->
+            <div class="relative mb-8">
+                <input type="text" id="forumSearch" placeholder="Поиск по форуму..." class="w-full pl-10 pr-4 py-3 border border-[#8BDAC3] rounded-lg focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] focus:border-transparent">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+            </div>
+        </section>
+        
+        <!-- Forum Topics -->
+        <section class="mb-12">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                <!-- Forum Header -->
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-200 hidden md:grid grid-cols-12 gap-4">
+                    <div class="col-span-6 font-medium text-[#065B5E]">Тема</div>
+                    <div class="col-span-2 font-medium text-[#065B5E]">Автор</div>
+                    <div class="col-span-2 font-medium text-[#065B5E]">Ответы</div>
+                    <div class="col-span-2 font-medium text-[#065B5E]">Последнее</div>
+                </div>
+                
+                <!-- Topic List -->
+                <div class="divide-y divide-gray-100">
+                    <!-- Topic 1 -->
+                    <div class="forum-topic px-6 py-4 transition" data-category="ideas">
+                        <div class="flex flex-col md:grid md:grid-cols-12 gap-4">
+                            <div class="md:col-span-6">
+                                <div class="flex items-start">
+                                    <div class="mr-3 mt-1">
+                                        <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                                            <i class="fas fa-lightbulb"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-[#065B5E] hover:text-purple-800 cursor-pointer mb-1">Идея: Платформа для обмена учебными материалами</h3>
+                                        <div class="flex flex-wrap gap-2">
+                                            <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">Образование</span>
+                                            <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">IT</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 mr-2">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <span class="text-sm">Иван Петров</span>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <span class="text-sm text-gray-500"><i class="far fa-comment mr-1"></i> 24</span>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <span class="text-sm text-gray-500">2 часа назад</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Topic 2 -->
+                    <div class="forum-topic px-6 py-4 transition" data-category="help">
+                        <div class="flex flex-col md:grid md:grid-cols-12 gap-4">
+                            <div class="md:col-span-6">
+                                <div class="flex items-start">
+                                    <div class="mr-3 mt-1">
+                                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                            <i class="fas fa-question-circle"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-[#065B5E] hover:text-purple-800 cursor-pointer mb-1">Помогите с выбором фреймворка для проекта</h3>
+                                        <div class="flex flex-wrap gap-2">
+                                            <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">Программирование</span>
+                                            <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">IT</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 mr-2">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <span class="text-sm">Анна Смирнова</span>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <span class="text-sm text-gray-500"><i class="far fa-comment mr-1"></i> 15</span>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <span class="text-sm text-gray-500">5 часов назад</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Topic 3 -->
+                    <div class="forum-topic px-6 py-4 transition" data-category="team">
+                        <div class="flex flex-col md:grid md:grid-cols-12 gap-4">
+                            <div class="md:col-span-6">
+                                <div class="flex items-start">
+                                    <div class="mr-3 mt-1">
+                                        <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                            <i class="fas fa-users"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-[#065B5E] hover:text-purple-800 cursor-pointer mb-1">Ищем дизайнера для образовательного приложения</h3>
+                                        <div class="flex flex-wrap gap-2">
+                                            <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">Дизайн</span>
+                                            <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">UI/UX</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 mr-2">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <span class="text-sm">Дмитрий Иванов</span>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <span class="text-sm text-gray-500"><i class="far fa-comment mr-1"></i> 8</span>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <span class="text-sm text-gray-500">1 день назад</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Topic 4 -->
+                    <div class="forum-topic px-6 py-4 transition" data-category="discussion">
+                        <div class="flex flex-col md:grid md:grid-cols-12 gap-4">
+                            <div class="md:col-span-6">
+                                <div class="flex items-start">
+                                    <div class="mr-3 mt-1">
+                                        <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600">
+                                            <i class="fas fa-comments"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-[#065B5E] hover:text-purple-800 cursor-pointer mb-1">Как организовать межвузовский хакатон?</h3>
+                                        <div class="flex flex-wrap gap-2">
+                                            <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">Организация</span>
+                                            <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">События</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 mr-2">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <span class="text-sm">Мария Кузнецова</span>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <span class="text-sm text-gray-500"><i class="far fa-comment mr-1"></i> 32</span>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <span class="text-sm text-gray-500">2 дня назад</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Topic 5 -->
+                    <div class="forum-topic px-6 py-4 transition" data-category="ideas">
+                        <div class="flex flex-col md:grid md:grid-cols-12 gap-4">
+                            <div class="md:col-span-6">
+                                <div class="flex items-start">
+                                    <div class="mr-3 mt-1">
+                                        <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                                            <i class="fas fa-lightbulb"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-[#065B5E] hover:text-purple-800 cursor-pointer mb-1">Идея: Мобильное приложение для волонтеров</h3>
+                                        <div class="flex flex-wrap gap-2">
+                                            <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">Социальный проект</span>
+                                            <span class="px-2 py-1 bg-[#8BDAC3]/20 text-[#065B5E] text-xs rounded-full">Мобильная разработка</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 mr-2">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <span class="text-sm">Алексей Соколов</span>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <span class="text-sm text-gray-500"><i class="far fa-comment mr-1"></i> 18</span>
+                            </div>
+                            <div class="md:col-span-2 flex items-center">
+                                <span class="text-sm text-gray-500">3 дня назад</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+                    <span class="text-sm text-gray-500">Показано 1-5 из 25 тем</span>
+                    <div class="flex space-x-2">
+                        <button class="w-10 h-10 flex items-center justify-center rounded-md border border-gray-300 text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="w-10 h-10 flex items-center justify-center rounded-md bg-[#065B5E] text-white">1</button>
+                        <button class="w-10 h-10 flex items-center justify-center rounded-md border border-gray-300 text-gray-500 hover:bg-gray-50">2</button>
+                        <button class="w-10 h-10 flex items-center justify-center rounded-md border border-gray-300 text-gray-500 hover:bg-gray-50">3</button>
+                        <button class="w-10 h-10 flex items-center justify-center rounded-md border border-gray-300 text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Popular Discussions -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-6 text-[#065B5E]">Популярные обсуждения</h2>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Discussion 1 -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-3">
+                            <i class="fas fa-lightbulb text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-[#065B5E]">Как привлечь инвесторов в студенческий проект?</h3>
+                            <div class="text-xs text-gray-500">24 ответа</div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-[#444] mb-4">Обсуждаем стратегии привлечения финансирования для студенческих стартапов и проектов.</p>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center text-sm text-gray-500">
+                            <i class="far fa-user mr-1"></i>
+                            <span>Иван Петров</span>
+                        </div>
+                        <button class="text-sm text-[#065B5E] hover:text-purple-800 font-medium">
+                            Присоединиться
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Discussion 2 -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3">
+                            <i class="fas fa-question-circle text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-[#065B5E]">Лучшие практики управления проектами</h3>
+                            <div class="text-xs text-gray-500">18 ответов</div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-[#444] mb-4">Делимся опытом и инструментами для эффективного управления студенческими проектами.</p>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center text-sm text-gray-500">
+                            <i class="far fa-user mr-1"></i>
+                            <span>Анна Смирнова</span>
+                        </div>
+                        <button class="text-sm text-[#065B5E] hover:text-purple-800 font-medium">
+                            Присоединиться
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Discussion 3 -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-3">
+                            <i class="fas fa-users text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-[#065B5E]">Как найти баланс между учебой и проектом?</h3>
+                            <div class="text-xs text-gray-500">32 ответа</div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-[#444] mb-4">Советы и личный опыт по совмещению учебной нагрузки и участия в проектах.</p>
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center text-sm text-gray-500">
+                            <i class="far fa-user mr-1"></i>
+                            <span>Дмитрий Иванов</span>
+                        </div>
+                        <button class="text-sm text-[#065B5E] hover:text-purple-800 font-medium">
+                            Присоединиться
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Create Topic Modal -->
+    <div id="createTopicModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl">
+            <div class="flex justify-between items-center border-b px-6 py-4">
+                <h3 class="text-lg font-semibold text-[#065B5E]">Создать новую тему</h3>
+                <button id="closeTopicModal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="px-6 py-4">
+                <div class="mb-6">
+                    <label for="topicTitle" class="block text-gray-700 mb-2">Название темы</label>
+                    <input type="text" id="topicTitle" class="w-full px-3 py-2 border border-[#8BDAC3] rounded-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3]" placeholder="Введите название вашей темы">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">Категория</label>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="category-select px-3 py-1 bg-[#8BDAC3]/20 text-[#065B5E] rounded-full text-sm hover:bg-[#8BDAC3]/40 transition" data-category="ideas">Идеи</button>
+                        <button class="category-select px-3 py-1 bg-[#8BDAC3]/20 text-[#065B5E] rounded-full text-sm hover:bg-[#8BDAC3]/40 transition" data-category="help">Помощь</button>
+                        <button class="category-select px-3 py-1 bg-[#8BDAC3]/20 text-[#065B5E] rounded-full text-sm hover:bg-[#8BDAC3]/40 transition" data-category="team">Поиск участников</button>
+                        <button class="category-select px-3 py-1 bg-[#8BDAC3]/20 text-[#065B5E] rounded-full text-sm hover:bg-[#8BDAC3]/40 transition" data-category="discussion">Обсуждение</button>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">Теги</label>
+                    <div class="flex flex-wrap gap-2 mb-2">
+                        <span class="tag px-3 py-1 bg-[#8BDAC3]/20 text-[#065B5E] rounded-full text-sm cursor-pointer">IT</span>
+                        <span class="tag px-3 py-1 bg-[#8BDAC3]/20 text-[#065B5E] rounded-full text-sm cursor-pointer">Дизайн</span>
+                        <span class="tag px-3 py-1 bg-[#8BDAC3]/20 text-[#065B5E] rounded-full text-sm cursor-pointer">Образование</span>
+                        <span class="tag px-3 py-1 bg-[#8BDAC3]/20 text-[#065B5E] rounded-full text-sm cursor-pointer">Стартап</span>
+                        <span class="tag px-3 py-1 bg-[#8BDAC3]/20 text-[#065B5E] rounded-full text-sm cursor-pointer">Маркетинг</span>
+                    </div>
+                    <input type="text" id="newTag" class="w-full px-3 py-2 border border-[#8BDAC3] rounded-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3]" placeholder="Добавить тег">
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-gray-700 mb-2">Описание темы</label>
+                    <div class="editor-toolbar">
+                        <button class="p-1 text-gray-600 hover:text-[#065B5E]"><i class="fas fa-bold"></i></button>
+                        <button class="p-1 text-gray-600 hover:text-[#065B5E]"><i class="fas fa-italic"></i></button>
+                        <button class="p-1 text-gray-600 hover:text-[#065B5E]"><i class="fas fa-list-ul"></i></button>
+                        <button class="p-1 text-gray-600 hover:text-[#065B5E]"><i class="fas fa-link"></i></button>
+                        <button class="p-1 text-gray-600 hover:text-[#065B5E]"><i class="fas fa-image"></i></button>
+                    </div>
+                    <div class="editor-content" contenteditable="true" id="topicContent">
+                        Опишите вашу тему подробно...
+                    </div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 mr-3">Отмена</button>
+                    <button class="px-4 py-2 bg-[#065B5E] text-white rounded-md hover:bg-[#C198FF] transition">Создать тему</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">МостВектор</h3>
+                    <p class="text-gray-400 text-sm">Платформа для формирования междисциплинарных и межвузовских проектных команд.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Навигация</h3>
+                    <ul class="space-y-2">
+                        <li><a href="index.html" class="text-gray-400 hover:text-white text-sm">Главная</a></li>
+                        <li><a href="projects.html" class="text-gray-400 hover:text-white text-sm">Проекты</a></li>
+                        <li><a href="forum.html" class="text-gray-400 hover:text-white text-sm">Форум</a></li>
+                        <li><a href="ideas.html" class="text-gray-400 hover:text-white text-sm">Идеи</a></li>
+                        <li><a href="rating.html" class="text-gray-400 hover:text-white text-sm">Рейтинг</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Контакты</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-envelope mr-2"></i> contact@mostvector.ru</li>
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-phone mr-2"></i> +7 (123) 456-78-90</li>
+                        <li class="flex items-center text-gray-400 text-sm"><i class="fas fa-map-marker-alt mr-2"></i> Москва, ул. Студенческая, 1</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Подписаться</h3>
+                    <p class="text-gray-400 text-sm mb-4">Будьте в курсе новых проектов и возможностей.</p>
+                    <div class="flex">
+                        <input type="email" placeholder="Ваш email" class="px-3 py-2 bg-gray-700 text-white rounded-l-md focus:outline-none focus:ring-2 ring-offset-1 focus:ring-[#8BDAC3] w-full">
+                        <button class="px-4 py-2 bg-[#065B5E] text-white rounded-r-md hover:bg-[#C198FF] transition">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="flex space-x-4 mt-4">
+                        <a href="#" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-vk"></i></a>
+                        <a href="#" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-telegram"></i></a>
+                        <a href="#" class="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white hover:bg-[#065B5E]"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm mb-4 md:mb-0">© 2025 МостВектор. Все права защищены.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white text-sm">Пользовательское соглашение</a>
+                    <a href="#" class="text-gray-400 hover:text-white text-sm">Политика конфиденциальности</a>
+                    <a href="#" class="text-gray-400 hover:text-white text-sm">FAQ</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Auth button logic
+            const authButton = document.getElementById('authButton');
+            const userData = localStorage.getItem('currentUser');
+            
+            if (authButton) {
+                try {
+                    const currentUser = JSON.parse(userData);
+                    if (currentUser) {
+                        authButton.textContent = 'Личный кабинет';
+                        authButton.setAttribute('href', 'profile.html');
+                    } else {
+                        authButton.textContent = 'Войти';
+                        authButton.setAttribute('href', 'login.html');
+                    }
+                } catch (e) {
+                    console.error('Ошибка чтения currentUser:', e);
+                    authButton.textContent = 'Войти';
+                    authButton.setAttribute('href', 'login.html');
+                }
+            }
+            
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobileMenuButton');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            
+            // Topic creation modal
+            const createTopicBtn = document.getElementById('createTopicBtn');
+            const createTopicModal = document.getElementById('createTopicModal');
+            const closeTopicModal = document.getElementById('closeTopicModal');
+            
+            if (createTopicBtn && createTopicModal && closeTopicModal) {
+                createTopicBtn.addEventListener('click', function() {
+                    createTopicModal.classList.remove('hidden');
+                });
+                
+                closeTopicModal.addEventListener('click', function() {
+                    createTopicModal.classList.add('hidden');
+                });
+            }
+            
+            // Category filtering
+            const categoryBtns = document.querySelectorAll('.category-btn');
+            const forumTopics = document.querySelectorAll('.forum-topic');
+            
+            categoryBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    categoryBtns.forEach(b => b.classList.remove('active-category'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active-category');
+                    
+                    const category = this.getAttribute('data-category');
+                    
+                    // Show/hide topics based on category
+                    forumTopics.forEach(topic => {
+                        if (category === 'all' || topic.getAttribute('data-category') === category) {
+                            topic.classList.remove('hidden');
+                        } else {
+                            topic.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+            
+            // Tag selection in modal
+            const tags = document.querySelectorAll('.tag');
+            tags.forEach(tag => {
+                tag.addEventListener('click', function() {
+                    this.classList.toggle('bg-[#065B5E]');
+                    this.classList.toggle('text-white');
+                });
+            });
+            
+            // Editor content placeholder
+            const editorContent = document.getElementById('topicContent');
+            if (editorContent) {
+                editorContent.addEventListener('focus', function() {
+                    if (this.textContent === 'Опишите вашу тему подробно...') {
+                        this.textContent = '';
+                    }
+                });
+                
+                editorContent.addEventListener('blur', function() {
+                    if (this.textContent === '') {
+                        this.textContent = 'Опишите вашу тему подробно...';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
